@@ -51,7 +51,7 @@ AIWorkKit 运行时监控插件：实时采集**当前运行的插件、脚本�
 ### 1.1 归属与人工干预
 
 - **进程归属**：从命令行里提取绝对路径，向上查找 `.git / package.json / pyproject.toml / go.mod /
-  Cargo.toml / composer.json / .codebuddy-plugin`，命中的目录即项目根；`node_modules / _npx /
+  Cargo.toml / composer.json / .aiplugin`，命中的目录即项目根；`node_modules / _npx /
   .venv / site-packages / AppData` 等依赖缓存目录不算项目。没有清单文件时退回“脚本所在目录”
   （虚线标签，口径更软）。
 - **插件归属**：`项目级`（位于当前工作区下）/ `市场·<marketplace>` / `用户级` / `本地`。
@@ -146,7 +146,7 @@ node cli/eco.js run    --label "pytest" -- <command ...>
 | POST | `/api/client-error` | 前端异常上报（message / source / stack），落到 `logs/error.log` |
 | POST | `/api/processes/{pid}/action` | `{action: stall\|skip\|kill, mode, note, confirm}` 处置进程 |
 | DELETE | `/api/processes/{pid}/action` | 撤销该进程的标记 |
-| POST | `/api/plugins/{name}/enabled` | `{enabled: true\|false}` 启用/关闭插件（写 `~/.codebuddy/settings.json`，自动备份） |
+| POST | `/api/plugins/{name}/enabled` | `{enabled: true\|false}` 启用/关闭插件（写 `<平台目录>/settings.json`，自动备份） |
 | POST | `/api/plugins/{name}/action` | `{action: stall\|skip, mode, note}` 处置插件（旧接口，UI 已不再使用） |
 | DELETE | `/api/plugins/{name}/action` | 撤销该插件的标记 |
 | POST | `/api/events` | Hook 事件入口（`eco-hook.js` 使用） |
@@ -221,7 +221,7 @@ powershell -ExecutionPolicy Bypass -File scripts\create-shortcut.ps1
   自动识别 js/ts/py/ps1/sh/bat… 语言），下半部是进度条与百分比、current/total、速率、ETA、已用时间、
   CPU/内存/运行时长/会话/命令行，以及该流程的日志尾（每 2s 刷新；源码仅在文件 mtime 变化时重载）
 - **插件**：名称/版本/**归属标签**（项目级 / 市场 / 用户级）/能力标签（hooks、skills、commands、agents），
-  绿点表示注入了 hook；右侧按钮为**「启用 / 关闭」**——直接改写 `~/.codebuddy/settings.json`
+  绿点表示注入了 hook；右侧按钮为**「启用 / 关闭」**——直接改写 `<平台目录>/settings.json`
   的 `enabledPlugins`（写入前自动备份 `*.bak_eco_<ts>`），已关闭的插件整行变暗并显示「已关闭」，
   重载窗口后真正生效。KPI 显示「启用数 / 已安装总数」
 - **实时事件流**：每条事件都带**生命周期阶段徽标**（`▶ 开始` / `✓ 完成` / `✕ 报错` / `• 信息`）、
@@ -320,7 +320,7 @@ node "${AIWORKKIT_PLUGIN_ROOT}/hooks/eco-hook.js" SessionStart
   仍失败则写入 `.eco/hook-queue.jsonl`，守护进程下次启动时回放
 - 该事件只记一条 `session start` 日志（含 sessionId / client / cwd），不生成任务卡
 
-配套规则（始终生效）：`~/.codebuddy/rules/eco-first.mdc` —— 第 0 步说明"启动即自动"，
+配套规则（始终生效）：`<平台目录>/rules/eco-first.mdc` —— 第 0 步说明"启动即自动"，
 第 1 步保留任务开始时的幂等兜底（`server --daemon` 已运行会跳过），
 第 3 步要求用 `eco task` 上报步骤清单。
 
@@ -332,7 +332,7 @@ node "${AIWORKKIT_PLUGIN_ROOT}/hooks/eco-hook.js" SessionStart
 IDE 的插件与 hooks 在**扩展宿主激活时**聚合加载一次（日志 `[plugin-manager] Loaded N hooks ... from M plugin(s)`），
 因此安装/注册插件后需要重载窗口才会接管新的 hook：
 
-1. 注册本地市场（已执行，产物在 `~/.codebuddy/plugins/marketplaces/eco-market`，
+1. 注册本地市场（已执行，产物在 `<平台目录>/plugins/marketplaces/eco-market`，
    `plugins/eco` 是指向本仓库的目录联接，`settings.json` 里
    `enabledPlugins["eco@eco-market"] = true`，三份注册文件均已备份为 `*.bak_eco_*`）
 2. 重载窗口：`Ctrl+Shift+P` → `Developer: Reload Window`

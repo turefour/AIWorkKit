@@ -8,7 +8,7 @@
  * @input  <dir> [--name slug] [--label 显示名] [--kind 类型] [--note 说明]
  *          [--stack node|python|static|none] [--message "提交说明"]
  *          [--dry] [--no-commit] [--no-register] [--force-ignore]
- * @usage  node tools/adopt-project.mjs "C:\Users\GH\Desktop\my-project" --name my-project
+ * @usage  node tools/adopt-project.mjs "D:\projects\my-project" --name my-project
  *         node tools/adopt-project.mjs . --dry
  * @reuse  yes
  *

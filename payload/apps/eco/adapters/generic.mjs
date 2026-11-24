@@ -6,11 +6,12 @@
  *   echo '{"event":"tool.end","job":{"id":"r1","status":"done"}}' | node generic.mjs
  *   node generic.mjs event.json
  *
- * 做的事：读 JSON（stdin 或文件）→ 补齐 platform/时间戳 → POST 到 Eco 的 /api/events。
+ * 做的事：读 JSON（stdin 或文件）→ 补齐 platform/时间戳 → POST 到 Eco 的 /api/ingest。
  * 失败不阻塞调用方：退出码恒为 0，错误打到 stderr。
  */
 
 import fs from 'node:fs';
+import http from 'node:http';
 
 const PORT = Number(process.env.AIWORKKIT_ECO_PORT || 57821);
 const HOST = process.env.AIWORKKIT_ECO_HOST || '127.0.0.1';
@@ -43,48 +44,78 @@ export function normalize(input, platform = 'generic') {
   return ev;
 }
 
-export async function postEvent(event, options = {}) {
+/**
+ * 上报一个事件。
+ *
+ * 走 /api/ingest 而不是 /api/events：前者会校验事件名、补齐默认值，
+ * 并在「只给了结束事件」时自动补一条开始。适配器因此不需要自己维护
+ * started 集合 —— 那套逻辑放服务端只需要写一遍，放各适配器里就会各写一份。
+ */
+export function postEvent(event, options = {}) {
   const port = options.port || PORT;
   const host = options.host || HOST;
-  const url = 'http://' + host + ':' + port + '/api/events';
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(event),
-      signal: AbortSignal.timeout(4000)
-    });
-    return { ok: res.ok, status: res.status };
-  } catch (err) {
-    return { ok: false, error: err.message };
-  }
-}
+  const body = Buffer.from(JSON.stringify(event), 'utf8');
 
-/**
- * 上报一个事件；如果是「结束类」事件而调用方没发过开始，
- * 先补一条 tool.start。
- *
- * 内部按「先 start 再 end」成对处理，只有 end 的事件会被当成孤立事件丢掉。
- * 很多平台只会告诉你「这一步做完了」，所以在这里补齐比要求每个平台都改容易。
- */
-export async function postWithStart(input) {
-  const ev = normalize(input);
-  // 共用同一个 ts：内部任务 id 是 tool:<sid>:<ts>:<tool>，
-  // 两条事件用不同 ts 会各建一条任务（看板上出现「running + done」重复项）
-  const sharedTs = ev.ts || Date.now();
-  ev.ts = sharedTs;
+  /*
+   * 用 node:http + agent:false，不用 fetch。
+   *
+   * fetch（undici）会保留 keep-alive 连接，适配器是短命进程，直接
+   * process.exit() 时 libuv 会在关闭这些 handle 时报
+   * `Assertion failed: !(handle->flags & UV_HANDLE_CLOSING)`，
+   * 进程被 abort，退出码变成 0xC0000409 —— 于是「命令成功」也会被判成失败，
+   * && 链路和 CI 全部误判。短连接在响应结束即关闭，退出就干净了。
+   */
+  return new Promise((resolve) => {
+    let settled = false;
+    const done = (result) => {
+      if (settled) return;
+      settled = true;
+      resolve(result);
+    };
 
-  const isEnd = ev.event === 'tool.end' || ev.event === 'tool.fail' || ev.event === 'turn.end';
-  if (isEnd) {
-    await postEvent({
-      ...ev,
-      ts: sharedTs,
-      event: 'tool.start',
-      job: { ...(ev.job || {}), status: 'running' }
+    const req = http.request(
+      {
+        host,
+        port,
+        path: '/api/ingest',
+        method: 'POST',
+        agent: false,
+        timeout: 4000,
+        headers: {
+          'content-type': 'application/json',
+          'content-length': body.length
+        }
+      },
+      (res) => {
+        let raw = '';
+        res.setEncoding('utf8');
+        res.on('data', (chunk) => {
+          raw += chunk;
+        });
+        res.on('end', () => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            done({ ok: true, status: res.statusCode });
+            return;
+          }
+          let detail = '';
+          try {
+            detail = (JSON.parse(raw) || {}).error || '';
+          } catch (_) {
+            /* 响应不是 JSON 就只报状态码 */
+          }
+          done({ ok: false, status: res.statusCode, error: detail });
+        });
+      }
+    );
+
+    req.on('timeout', () => {
+      req.destroy(new Error('timeout'));
     });
-    await new Promise((r) => setTimeout(r, 30)); // 保证先后顺序
-  }
-  return postEvent(ev);
+    req.on('error', (err) => {
+      done({ ok: false, error: err.message });
+    });
+    req.end(body);
+  });
 }
 
 async function main() {
@@ -117,7 +148,7 @@ async function main() {
 
   const list = Array.isArray(parsed) ? parsed : [parsed];
   for (const item of list) {
-    const r = await postWithStart(item);
+    const r = await postEvent(normalize(item));
     if (!r.ok) console.error('[generic] 上报失败：' + (r.error || r.status));
   }
   process.exit(0);

@@ -137,7 +137,7 @@ node tools/adopt-project.mjs "C:\path\to\project" --name my-proj --label "我的
 
 ## 与旧目录的关系
 
-`C:\Users\GH\Desktop\handdelete`（约 1000 个历史一次性脚本）保留为归档，
+`[归档目录]`（约 1000 个历史一次性脚本）保留为归档，
 只做版本快照，不再新增。新脚本一律进本库：
 
 - 需长期复用 → `tools/`（带 `@reuse yes`）

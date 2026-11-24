@@ -62,10 +62,10 @@ powershell -File <目标目录>\tools\test-deploy.ps1 -Target <目标目录>
 
 | 包内路径 | 真实源码 |
 |---|---|
-| `payload/apps/codevault` | `C:\Users\GH\Desktop\CodeVault` |
+| `payload/apps/codevault` | `payload/apps/codevault`（本仓库即源码） |
 | `payload/apps/eco` | `payload/apps/eco`（本仓库即源码） |
 | `payload/apps/tuner` | `payload/apps/tuner`（本仓库即源码） |
-| `payload/apps/scriptvault` | `C:\Users\GH\Desktop\ScriptVault` |
+| `payload/apps/scriptvault` | `payload/apps/scriptvault`（本仓库即源码） |
 
 改应用 → 改源码目录 → 跑 build-package。
 

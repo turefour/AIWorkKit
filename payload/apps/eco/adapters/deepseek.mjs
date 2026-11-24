@@ -15,7 +15,7 @@
  * 逐行处理可以做到任务没结束就在看板上看到进度。
  */
 
-import { postEvent, normalize, postWithStart } from './generic.mjs';
+import { postEvent, normalize } from './generic.mjs';
 
 /** 把 Harness 的简写映射成标准事件 */
 export function translate(line) {
@@ -61,11 +61,12 @@ let pending = 0;
 let failed = 0;
 let buffer = '';
 
-/* 已经发过 tool.start 的 (会话|工具)，用来避免重复补发。
-   流里本来就成对给出 start/end 时，再补一条 start 会让内部 pending 队列
-   多出一个永远不会被关闭的条目，看板上就出现「running + done」两条。 */
-const started = new Set();
-
+/*
+ * 逐行转换后直接上报。
+ *
+ * 不用再自己维护「这个会话有没有发过 start」—— 服务端 /api/ingest 已经会
+ * 在收到孤立的结束事件时补一条开始。适配器只管翻译，逻辑留在服务端一处。
+ */
 function flush(line) {
   const text = line.trim();
   if (!text || text.startsWith('#')) return;
@@ -75,28 +76,13 @@ function flush(line) {
     return;
   }
 
-  const key = (ev.sessionId || 'local') + '|' + (ev.tool || 'Tool');
-  const isStart = ev.event === 'tool.start';
-  const isEnd = ev.event === 'tool.end' || ev.event === 'tool.fail' || ev.event === 'turn.end';
-
-  if (isStart) started.add(key);
-
-  // 只有「从没见过开始」的结束事件才补发 start
-  const needStart = isEnd && !started.has(key);
-  if (needStart) {
-    started.add(key);
-    pending += 1;
-    postEvent({ ...ev, event: 'tool.start' }).then((r) => {
-      if (!r.ok) failed += 1;
-      pending -= 1;
-    });
-  }
-
   pending += 1;
   postEvent(ev).then((r) => {
-    if (!r.ok) failed += 1;
+    if (!r.ok) {
+      failed += 1;
+      if (r.error) console.error('[deepseek] 上报失败：' + r.error);
+    }
     pending -= 1;
-    if (isEnd) started.delete(key); // 一轮结束后允许同名工具再来一次
   });
 }
 

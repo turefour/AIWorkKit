@@ -49,7 +49,7 @@ CodeVault/
 ```powershell
 # 1. 追加修改记录到对应项目的 changelog（人工或脚本）
 # 2. 刷新规模数据
-node "C:\Users\GH\Desktop\CodeVault\tools\scan.mjs"
+node tools/scan.mjs
 
 # 3. 提交代码库快照（工作区根已 git init）
 cd <你的工程根目录>
@@ -87,14 +87,14 @@ git commit -m "chore: 描述"
 | paths.scriptDir | 可复用脚本归档目录 |
 | paths.vaultRoot | 脚本库（ScriptVault）根目录 |
 | paths.codeRoots | /api/file 允许读取的目录白名单 |
-| `C:\Users\GH\Desktop\ScriptVault` | 脚本主库（lib / tools / tests + 分类索引） |
-| `C:\Users\GH\Desktop\handdelete` | 历史脚本归档（约 1021 个，只做快照） |
+| `<脚本库目录>`（config 的 paths.vaultRoot） | 脚本主库（lib / tools / tests + 分类索引） |
+| `<归档目录>`（config 的 paths.scriptDir） | 历史脚本归档（约 1021 个，只做快照） |
 
 git 为便携版：<套件>\runtime\git\cmd\git.exe（不在系统 PATH）。
 
 ## 脚本库（分类索引）
 
-侧栏「工具脚本库」读取 `C:\Users\GH\Desktop\ScriptVault\index.json`：
+侧栏「工具脚本库」读取 `<脚本库目录>\index.json`：
 
 | 分区 | 内容 | 数量 |
 |---|---|---|
@@ -104,7 +104,7 @@ git 为便携版：<套件>\runtime\git\cmd\git.exe（不在系统 PATH）。
 | 归档 | `handdelete` 历史脚本 | 1021 |
 
 - 分类来自脚本头部 `@category`，页面用 chips 按分类筛选，可再叠加文本搜索
-- 刷新索引：`node C:\Users\GH\Desktop\ScriptVault\build-index.mjs`
+- 刷新索引：`node <脚本库目录>\build-index.mjs`
 - 新增工具：`node tools/scaffold.mjs <name> --purpose "..." --category web`
 
 ## 已知限制

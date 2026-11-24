@@ -95,6 +95,21 @@
           "curl": "curl http://127.0.0.1:{port}/api/state"
         },
         {
+          "id": "eco.stream",
+          "name": "订阅实时流（输出）",
+          "method": "GET",
+          "path": "/api/stream",
+          "desc": "SSE 长连接。state 帧只在真实变更时推，tick 帧每秒推一次轻量时钟字段。",
+          "request": null,
+          "response": {
+            "frames": [
+              "event: state  data: { 完整快照 }",
+              "event: tick   data: { now, uptimeMs, jobs[], sources{} }"
+            ]
+          },
+          "curl": "curl -N http://127.0.0.1:{port}/api/stream"
+        },
+        {
           "id": "eco.config.read",
           "name": "读取配置（输出）",
           "method": "GET",
