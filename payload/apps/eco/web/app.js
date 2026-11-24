@@ -367,10 +367,14 @@ async function refreshProcPane() {
   if (procState.busy) return;
   procState.busy = true;
   try {
-    const [sys, procs] = await Promise.all([
+    const [sys, procs, hist] = await Promise.all([
       fetch('/api/system', { cache: 'no-store' }).then((r) => r.json()).catch(() => null),
-      fetch('/api/procs?limit=40', { cache: 'no-store' }).then((r) => r.json()).catch(() => null)
+      fetch('/api/procs?limit=40', { cache: 'no-store' }).then((r) => r.json()).catch(() => null),
+      fetch('/api/procs/history', { cache: 'no-store' }).then((r) => r.json()).catch(() => null)
     ]);
+
+    if (hist && hist.ok) renderTrend(hist);
+
 
     if (sys && sys.ok) {
       const cpu = sys.cpu || {};
@@ -400,6 +404,8 @@ async function refreshProcPane() {
       }
       const note = $('procNote');
       if (note) note.textContent = procs.note || '';
+
+      renderGroups(procs.groups || []);
       renderProcTable();
     } else if (procs) {
       const note = $('procNote');
@@ -523,6 +529,184 @@ async function killProc(p, btn) {
     if (note) note.textContent = '清理失败：' + e.message;
   }
   setTimeout(refreshProcPane, 600);
+}
+
+/* ---------------------------------------------- 最近 5 分钟趋势（纯 SVG，无依赖） */
+
+function renderTrend(hist) {
+  const box = $('trendBox');
+  if (!box) return;
+  const points = (hist.points || []).filter((p) => p && p.t);
+  const meta = $('trendMeta');
+
+  if (points.length < 2) {
+    box.innerHTML =
+      '<div class="empty">正在采集… 每 ' +
+      Math.round((hist.intervalMs || 5000) / 1000) +
+      ' 秒一个点，约 10 秒后出曲线</div>';
+    if (meta) meta.textContent = '—';
+    return;
+  }
+
+  const W = 720;
+  const H = 150;
+  const PAD_X = 34;
+  const PAD_Y = 14;
+  const innerW = W - PAD_X * 2;
+  const innerH = H - PAD_Y * 2;
+  const xs = (i) => PAD_X + (innerW * i) / (points.length - 1);
+  const ys = (v) => PAD_Y + innerH * (1 - Math.max(0, Math.min(100, v)) / 100);
+
+  // 断点要断开而不是连直线：CPU 第一次采样是 null，直接连会画出一条假线
+  const lineOf = (key) => {
+    const segs = [];
+    let cur = [];
+    points.forEach((p, i) => {
+      const v = p[key];
+      if (v == null || Number.isNaN(v)) {
+        if (cur.length) {
+          segs.push(cur);
+          cur = [];
+        }
+        return;
+      }
+      cur.push(xs(i).toFixed(1) + ',' + ys(v).toFixed(1));
+    });
+    if (cur.length) segs.push(cur);
+    return segs.map((s) => s.join(' ')).join(' ');
+  };
+
+  let grid = '';
+  [25, 50, 75].forEach((v) => {
+    const y = ys(v).toFixed(1);
+    grid +=
+      '<line x1="' + PAD_X + '" y1="' + y + '" x2="' + (W - PAD_X) + '" y2="' + y + '" class="trend-grid"/>' +
+      '<text x="' + (PAD_X - 6) + '" y="' + (Number(y) + 3) + '" class="trend-axis" text-anchor="end">' + v + '</text>';
+  });
+
+  const cpuLine = lineOf('cpu');
+  const memLine = lineOf('mem');
+  const last = points[points.length - 1];
+
+  box.innerHTML =
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" class="trend-svg" preserveAspectRatio="none">' +
+    grid +
+    (memLine ? '<polyline points="' + memLine + '" class="trend-line trend-mem"/>' : '') +
+    (cpuLine ? '<polyline points="' + cpuLine + '" class="trend-line trend-cpu"/>' : '') +
+    '</svg>';
+
+  if (meta) {
+    meta.textContent =
+      Math.round((hist.windowSec || 300) / 60) + ' 分钟 · ' + points.length + ' 点 · 当前 ' +
+      (last.cpu == null ? '—' : last.cpu + '%') + ' / ' + last.mem + '%';
+  }
+}
+
+/* ---------------------------------------------- 按归属汇总 + 整组清理 */
+
+function renderGroups(groups) {
+  const box = $('groupTable');
+  if (!box) return;
+
+  const meta = $('groupMeta');
+  const totalMem = groups.reduce((a, g) => a + (g.memMB || 0), 0);
+  const totalCpu = Math.round(groups.reduce((a, g) => a + (g.cpu || 0), 0) * 10) / 10;
+  if (meta) {
+    meta.textContent = groups.length + ' 组 · CPU ' + totalCpu + '% · 内存 ' + totalMem + ' MB';
+  }
+
+  box.innerHTML = '';
+  if (!groups.length) {
+    box.innerHTML = '<div class="empty">暂无数据</div>';
+    return;
+  }
+
+  const head = document.createElement('div');
+  head.className = 'proc-row proc-head group-row';
+  ['归属', '进程数', 'CPU 合计', '内存合计', ''].forEach((t) => {
+    const c = document.createElement('div');
+    c.className = 'proc-cell';
+    c.textContent = t;
+    head.appendChild(c);
+  });
+  box.appendChild(head);
+
+  groups.forEach((g) => {
+    const row = document.createElement('div');
+    row.className = 'proc-row group-row';
+
+    const owner = document.createElement('div');
+    owner.className = 'proc-cell group-owner';
+    owner.textContent = g.owner;
+
+    const count = document.createElement('div');
+    count.className = 'proc-cell proc-num';
+    count.textContent = g.count + ' 个';
+
+    const cpu = document.createElement('div');
+    cpu.className = 'proc-cell proc-num';
+    cpu.textContent = fmtNum(g.cpu) + '%';
+
+    const mem = document.createElement('div');
+    mem.className = 'proc-cell proc-num';
+    mem.textContent = g.memMB + ' MB';
+
+    const act = document.createElement('div');
+    act.className = 'proc-cell proc-act';
+    const btn = document.createElement('button');
+    btn.className = 'ghost proc-kill';
+    btn.type = 'button';
+    btn.textContent = '清理该组';
+    if (!g.unprotected) {
+      btn.disabled = true;
+      btn.title = '该组全部受保护';
+    } else {
+      btn.addEventListener('click', () => killGroup(g, btn));
+    }
+    act.appendChild(btn);
+
+    row.appendChild(owner);
+    row.appendChild(count);
+    row.appendChild(cpu);
+    row.appendChild(mem);
+    row.appendChild(act);
+    box.appendChild(row);
+  });
+}
+
+async function killGroup(g, btn) {
+  const ok = window.confirm(
+    '结束「' + g.owner + '」下的全部进程？\n\n' +
+      '进程数：' + g.count + '（其中 ' + g.unprotected + ' 个可结束）\n' +
+      'CPU 合计：' + g.cpu + '%\n' +
+      '内存合计：' + g.memMB + ' MB\n\n' +
+      '系统关键进程会自动跳过。未保存的数据会丢失。'
+  );
+  if (!ok) return;
+
+  btn.disabled = true;
+  btn.textContent = '处理中…';
+  try {
+    const res = await fetch('/api/procs/kill-group', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ owner: g.owner, confirm: true })
+    });
+    const j = await res.json();
+    const note = $('procNote');
+    if (j.ok) {
+      btn.textContent = '已清理 ' + (j.killed || []).length;
+      if (note) note.textContent = '已结束 ' + (j.killed || []).length + ' 个，跳过 ' + (j.skipped || []).length + ' 个';
+    } else {
+      btn.textContent = '失败';
+      if (note) note.textContent = '整组清理失败：' + (j.error || '未知错误');
+    }
+  } catch (e) {
+    btn.textContent = '失败';
+    const note = $('procNote');
+    if (note) note.textContent = '整组清理失败：' + e.message;
+  }
+  setTimeout(refreshProcPane, 800);
 }
 
 (function initTabs() {

@@ -111,6 +111,26 @@
 
         <section class="panel">
           <header class="panel-head">
+            <h2>最近 5 分钟</h2>
+            <div class="panel-tools">
+              <span class="legend"><i class="legend-cpu"></i>CPU</span>
+              <span class="legend"><i class="legend-mem"></i>内存</span>
+              <span id="trendMeta" class="muted">—</span>
+            </div>
+          </header>
+          <div id="trendBox" class="trend"></div>
+        </section>
+
+        <section class="panel">
+          <header class="panel-head">
+            <h2>按归属汇总</h2>
+            <span id="groupMeta" class="muted">—</span>
+          </header>
+          <div id="groupTable" class="proc-list group-list"></div>
+        </section>
+
+        <section class="panel">
+          <header class="panel-head">
             <h2>设备进程与归属</h2>
             <div class="panel-tools">
               <span id="procTotal" class="muted">0</span>

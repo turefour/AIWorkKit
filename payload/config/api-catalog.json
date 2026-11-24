@@ -238,6 +238,58 @@
                                                               "killedAt":  "2026-11-24T04:12:33.000Z"
                                                           },
                                              "curl":  "curl -X POST http://127.0.0.1:{port}/api/procs/kill -H \"content-type: application/json\" -d \"{\\\"pid\\\":16436,\\\"name\\\":\\\"node\\\"}\""
+                                         },
+                                         {
+                                             "id":  "eco.procs.history",
+                                             "name":  "资源趋势（输出）",
+                                             "method":  "GET",
+                                             "path":  "/api/procs/history",
+                                             "desc":  "最近 5 分钟的 CPU / 内存折线数据（服务端每 5 秒采样，环形缓冲 60 点）。",
+                                             "request":  null,
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "intervalMs":  5000,
+                                                              "windowSec":  300,
+                                                              "points":  [
+                                                                             {
+                                                                                 "t":  1795499000000,
+                                                                                 "cpu":  62.8,
+                                                                                 "mem":  95.6
+                                                                             }
+                                                                         ]
+                                                          },
+                                             "curl":  "curl http://127.0.0.1:{port}/api/procs/history"
+                                         },
+                                         {
+                                             "id":  "eco.procs.killgroup",
+                                             "name":  "整组清理（写入）",
+                                             "method":  "POST",
+                                             "path":  "/api/procs/kill-group",
+                                             "desc":  "按归属一次性结束该组全部可清理进程；受保护进程自动跳过，必须显式带 confirm:true。",
+                                             "request":  {
+                                                             "owner":  "AI 编辑器",
+                                                             "confirm":  true
+                                                         },
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "owner":  "AI 编辑器",
+                                                              "killed":  [
+                                                                             {
+                                                                                 "pid":  10136,
+                                                                                 "name":  "CodeBuddy CN",
+                                                                                 "memMB":  730
+                                                                             }
+                                                                         ],
+                                                              "skipped":  [
+                                                                              {
+                                                                                  "pid":  9028,
+                                                                                  "name":  "explorer",
+                                                                                  "reason":  "系统关键进程"
+                                                                              }
+                                                                          ],
+                                                              "skippedTotal":  1
+                                                          },
+                                             "curl":  "curl -X POST http://127.0.0.1:{port}/api/procs/kill-group -H \"content-type: application/json\" -d \"{\\\"owner\\\":\\\"AI 编辑器\\\",\\\"confirm\\\":true}\""
                                          }
                                      ]
                    },

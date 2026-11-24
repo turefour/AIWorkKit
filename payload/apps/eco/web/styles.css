@@ -1451,3 +1451,47 @@ body.compact .log-body {
   .sys-kpis { grid-template-columns: 1fr; }
   .proc-row { grid-template-columns: minmax(90px, 1.2fr) 84px 56px 62px 76px 76px; }
 }
+
+/* ============================================================
+ * 趋势图（纯 SVG）
+ * ============================================================ */
+.trend { padding: 8px 14px 14px; }
+.trend-svg { width: 100%; height: 150px; display: block; }
+.trend-grid { stroke: rgba(124, 156, 210, 0.12); stroke-width: 1; }
+.trend-axis {
+  fill: var(--muted);
+  font-size: 10px;
+  font-family: var(--mono);
+}
+.trend-line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+.trend-cpu { stroke: var(--mint); }
+.trend-mem { stroke: var(--blue); stroke-dasharray: 4 3; }
+
+.legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-right: 10px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.legend i {
+  display: inline-block;
+  width: 12px;
+  height: 2px;
+  border-radius: 2px;
+}
+.legend-cpu { background: var(--mint); }
+.legend-mem { background: var(--blue); }
+
+/* ============================================================
+ * 归属汇总表（列比进程表少一列）
+ * ============================================================ */
+.group-row { grid-template-columns: minmax(120px, 1.2fr) 80px 96px 110px 96px; }
+.group-owner { color: var(--text); }

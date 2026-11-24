@@ -225,6 +225,8 @@ async function listProcesses(options = {}) {
     tookMs: now - started,
     total: procs.length,
     procs: sorted,
+    // 用全量算分组，不受 procs 被截断影响
+    groups: groupSummary(procs),
     // 首次采样时把「差值还没建立」说清楚，免得界面显示一排空值让人误会
     note: wall === 0 ? '首次采样，CPU 百分比需要下一次刷新才有值' : ''
   };
@@ -259,4 +261,115 @@ function killProcess(pid, options = {}) {
   }
 }
 
-module.exports = { systemUsage, listProcesses, killProcess, ownerOf, isProtected };
+/* ------------------------------------------------------------------ 按归属汇总 */
+
+/**
+ * 把进程按归属分组累计。
+ * 面板逐行看很难判断「到底是谁在吃资源」，分组后一眼能看出大头。
+ */
+function groupSummary(procs) {
+  const map = new Map();
+  for (const p of procs || []) {
+    const key = p.owner || '其他';
+    const g = map.get(key) || { owner: key, count: 0, cpu: 0, memMB: 0, unprotected: 0 };
+    g.count += 1;
+    g.cpu += p.cpuPercent || 0;
+    g.memMB += p.memMB || 0;
+    if (!p.protected) g.unprotected += 1;
+    map.set(key, g);
+  }
+  return Array.from(map.values())
+    .map((g) => ({ ...g, cpu: Math.round(g.cpu * 10) / 10 }))
+    .sort((a, b) => b.memMB - a.memMB);
+}
+
+/** 整组清理：把某个归属下所有「非受保护」进程一起结束 */
+async function killGroup(owner, options = {}) {
+  const selfPid = options.selfPid || process.pid;
+  const name = String(owner || '').trim();
+  if (!name) return { ok: false, error: 'owner is required' };
+
+  // limit 取大值，拿全量列表再筛；内部有 2.5 秒缓存，不会额外压机器
+  const list = await listProcesses({ selfPid, limit: 999 });
+  if (!list.ok) return { ok: false, error: list.error || '读取进程失败' };
+
+  const targets = (list.procs || []).filter((p) => p.owner === name);
+  if (!targets.length) return { ok: false, error: '该归属下没有进程：' + name };
+
+  const killed = [];
+  const skipped = [];
+  let skippedTotal = 0;
+
+  for (const p of targets) {
+    if (p.protected) {
+      skippedTotal += 1;
+      // 明细只留前 20 条：系统组动辄上百个 svchost，全返回没有意义还占带宽
+      if (skipped.length < 20) {
+        skipped.push({ pid: p.pid, name: p.name, reason: p.protectedReason || '受保护' });
+      }
+      continue;
+    }
+    const r = killProcess(p.pid, { selfPid, name: p.name });
+    if (r.ok) killed.push({ pid: p.pid, name: p.name, memMB: p.memMB });
+    else {
+      skippedTotal += 1;
+      if (skipped.length < 20) skipped.push({ pid: p.pid, name: p.name, reason: r.error || '取消失败' });
+    }
+  }
+
+  return {
+    ok: killed.length > 0,
+    owner: name,
+    killed,
+    skipped,
+    skippedTotal,
+    error: killed.length ? '' : '没有可结束的进程（全部受保护）'
+  };
+}
+
+/* ------------------------------------------------------------------ 历史趋势 */
+
+/*
+ * 环形缓冲：每 5 秒记一条 CPU/内存，保留 60 条 = 5 分钟。
+ *
+ * 单独起定时器而不是「有人请求才采样」：趋势图要的是连续曲线，
+ * 靠前端请求驱动的话，页签一关就断档，回来看到的还是断的。
+ * 采样本身很便宜（只读 os.cpus/os.freemem，不起子进程）。
+ */
+const HISTORY_MAX = 60;
+const HISTORY_INTERVAL_MS = 5000;
+const historyBuf = [];
+let historyTimer = null;
+
+function startHistory() {
+  if (historyTimer) return;
+  const push = () => {
+    const s = systemUsage();
+    historyBuf.push({ t: Date.now(), cpu: s.cpu.usagePercent, mem: s.memory.usedPercent });
+    if (historyBuf.length > HISTORY_MAX) historyBuf.shift();
+  };
+  push();
+  historyTimer = setInterval(push, HISTORY_INTERVAL_MS);
+  if (historyTimer.unref) historyTimer.unref(); // 不阻止进程退出
+}
+
+function history() {
+  return {
+    ok: true,
+    intervalMs: HISTORY_INTERVAL_MS,
+    windowSec: (HISTORY_MAX * HISTORY_INTERVAL_MS) / 1000,
+    points: historyBuf.slice()
+  };
+}
+
+module.exports = {
+  systemUsage,
+  listProcesses,
+  killProcess,
+  killGroup,
+  groupSummary,
+  startHistory,
+  history,
+  ownerOf,
+  isProtected
+};

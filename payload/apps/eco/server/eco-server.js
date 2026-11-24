@@ -1010,6 +1010,27 @@ async function route(req, res) {
     return sendJson(res, result.ok ? 200 : 500, result);
   }
 
+  if (method === 'GET' && pathname === '/api/procs/history') {
+    return sendJson(res, 200, procsys.history());
+  }
+
+  if (method === 'POST' && pathname === '/api/procs/kill-group') {
+    const body = (await readBody(req)) || {};
+    if (!body.owner) return sendJson(res, 400, { ok: false, error: 'owner is required' });
+    // 整组清理影响面大，必须显式确认
+    if (body.confirm !== true) {
+      return sendJson(res, 400, { ok: false, error: 'need confirm:true to kill a whole group' });
+    }
+
+    const result = await procsys.killGroup(body.owner, { selfPid: process.pid });
+    logger.warn('proc', 'process group killed by panel', {
+      owner: body.owner,
+      killed: (result.killed || []).length,
+      skipped: (result.skipped || []).length
+    });
+    return sendJson(res, result.ok ? 200 : 400, result);
+  }
+
   if (method === 'POST' && pathname === '/api/procs/kill') {
     const body = (await readBody(req)) || {};
     if (!body.pid) return sendJson(res, 400, { ok: false, error: 'pid is required' });
@@ -1445,6 +1466,9 @@ async function route(req, res) {
 
 store.restore();
 store.onChange(() => scheduleBroadcast());
+
+// 趋势图需要连续曲线，采样器随服务启动（很便宜：只读 os 计数器）
+procsys.startHistory();
 // `onSample` is a plain property, not a setter: assign it, do not call it.
 procScanner.onSample = () => {
   sources.scan.lastAt = Date.now();
