@@ -26,3 +26,6 @@ coverage/
 .env
 .env.*
 *.tsbuildinfo
+
+# 打包用的便携运行时（node / mingit），体积大且可重新获取
+.tools/

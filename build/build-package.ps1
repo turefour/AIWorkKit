@@ -38,7 +38,9 @@ $Sources = @{
 }
 
 $NodeExe = 'C:\Program Files\nodejs\node.exe'
-$MinGit = Join-Path $PSScriptRoot '..\payload\runtime\git'
+# 注意：源目录不能在 payload\runtime 里面 —— 第 2 步会先删掉 runtime 再重建，
+# 指向里面等于把自己的源删了（实测踩过一次，mingit 直接被删掉）。
+$MinGit = Join-Path $PSScriptRoot '..\.tools\mingit'
 
 # 按路径段排除：整串通配（'*\node_modules\*'）匹配不到顶层目录，会误带几百 MB
 $ExcludeSegments = @(
