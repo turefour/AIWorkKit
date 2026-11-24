@@ -197,9 +197,9 @@ namespace AIWorkKit
         // ---------------------------------------------------------------- state
         private readonly string _kitRoot;
         private readonly string _exeDir;
-        private int _port = 47910;
-        private int _eco = 47821;
-        private int _tuner = 47822;
+        private int _port = 57910;
+        private int _eco = 57821;
+        private int _tuner = 57822;
         private string _host = "127.0.0.1";
 
         private Process _edge;
@@ -736,7 +736,7 @@ namespace AIWorkKit
             }
             catch
             {
-                // keep defaults; the page will still try 47910
+                // keep defaults; the page will still try 57910
             }
         }
 

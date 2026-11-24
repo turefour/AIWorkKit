@@ -1,6 +1,6 @@
 # CodeVault · 本地工程索引库
 
-把本机 `C:\Users\GH\AIWorkKit` 下的全部会话项目整理成可浏览的索引：
+把本机任意目录下的工程整理成可浏览的索引（根目录由 config/deploy.json 的 paths.codeRoots 决定）：
 任务列表 → 分区与功能 → 真实源码 → 构建逻辑 → 修改记录 → 问题清单。
 
 ## 打开方式
@@ -11,7 +11,7 @@
 node tools/serve.mjs --open
 ```
 
-服务只监听 `127.0.0.1:47910`，仅接受 GET。直接双击 `index.html` 会因为
+服务只监听 `127.0.0.1:57910`，仅接受 GET。直接双击 `index.html` 会因为
 `file://` 的同源策略读不到 `data/projects.json`。
 
 ## 目录结构
@@ -52,7 +52,7 @@ CodeVault/
 node "C:\Users\GH\Desktop\CodeVault\tools\scan.mjs"
 
 # 3. 提交代码库快照（工作区根已 git init）
-cd C:\Users\GH\AIWorkKit\20261029081733
+cd <你的工程根目录>
 git add -A
 git commit -m "chore: 描述"
 ```
@@ -61,7 +61,7 @@ git commit -m "chore: 描述"
 
 ## 安全边界
 
-- `/api/file` 只允许读取 `C:\Users\GH\AIWorkKit` 与 `C:\Users\GH\Desktop` 下的真实路径
+- /api/file 只允许读取 paths.codeRoots 内的真实路径（默认工作区与桌面）
 - 单文件上限 512 KB，只允许文本类扩展名
 - 服务仅监听回环地址，且拒绝非 GET 请求
 
@@ -71,8 +71,8 @@ git commit -m "chore: 描述"
 
 | 入口 | 对应插件 | 端口 | 内容 |
 |---|---|---|---|
-| 实时看板 · Eco | `eco` | 47821 | 运行中任务、工具调用、进度、人工处置 |
-| 降温面板 · Tuner | `tuner` | 47822 | 内存占用、工作集回收、优先级、挂起/恢复 |
+| 实时看板 · Eco | `eco` | 57821 | 运行中任务、工具调用、进度、人工处置 |
+| 降温面板 · Tuner | `tuner` | 57822 | 内存占用、工作集回收、优先级、挂起/恢复 |
 
 - 服务离线时显示「启动服务」按钮，由 `POST /api/launch` 拉起本地进程
 - 该接口只接受同源 JSON 请求，且仅有 `eco` / `tuner` 两个白名单应用
@@ -81,16 +81,16 @@ git commit -m "chore: 描述"
 
 ## 版本库分布
 
-| 仓库根 | 覆盖范围 |
+| 配置项 | 含义 |
 |---|---|
-| `C:\Users\GH\AIWorkKit\20261029081733` | 6 个可运行子工程（eco / tuner / bridge / iso-td / attendance / cal_hood） |
-| `C:\Users\GH\AIWorkKit\20260807162637` | 规程 PDF 库治理脚本 |
-| `C:\Users\GH\AIWorkKit\20261012151723` | QQ 塔罗机器人 |
-| `C:\Users\GH\Desktop\CodeVault` | 索引站点与工具 |
+| paths.workspace | 工作区根目录，默认 %USERPROFILE%\CodeBuddy |
+| paths.scriptDir | 可复用脚本归档目录 |
+| paths.vaultRoot | 脚本库（ScriptVault）根目录 |
+| paths.codeRoots | /api/file 允许读取的目录白名单 |
 | `C:\Users\GH\Desktop\ScriptVault` | 脚本主库（lib / tools / tests + 分类索引） |
 | `C:\Users\GH\Desktop\handdelete` | 历史脚本归档（约 1021 个，只做快照） |
 
-git 为便携版：`C:\Users\GH\AIWorkKit\20261029081733\.tools\mingit\cmd\git.exe`（不在系统 PATH）。
+git 为便携版：<套件>\runtime\git\cmd\git.exe（不在系统 PATH）。
 
 ## 脚本库（分类索引）
 

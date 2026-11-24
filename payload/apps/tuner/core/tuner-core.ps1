@@ -147,7 +147,7 @@ function Get-TunerDefaultConfig {
     autoResumeMinutes = 0              # 0 = never auto resume
     trayOnStart    = $true             # SessionStart hook raises the tray icon
     windowOnStart  = $false            # also pop the standalone dashboard window
-    port           = 47822             # local dashboard server port
+    port           = 57822             # local dashboard server port
   }
 }
 

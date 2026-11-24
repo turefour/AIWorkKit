@@ -25,7 +25,7 @@ package/                 插件分发包模板
 ## 三条命令
 
 ```powershell
-node cli\eco.js server --daemon    # 起服务（默认 47821）
+node cli\eco.js server --daemon    # 起服务（默认 57821）
 node --test                           # 跑单元测试
 node cli\eco.js status              # 看当前状态
 ```

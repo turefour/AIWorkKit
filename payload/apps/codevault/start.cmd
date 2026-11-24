@@ -1,5 +1,5 @@
 @echo off
-rem CodeVault launcher: serve the index on 127.0.0.1:47910 and open a browser.
+rem CodeVault launcher: serve the index on 127.0.0.1:57910 and open a browser.
 setlocal
 cd /d "%~dp0"
 

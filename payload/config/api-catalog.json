@@ -35,7 +35,7 @@
             }
           },
           "response": { "ok": true, "accepted": true },
-          "curl": "curl -X POST http://127.0.0.1:57821/api/events -H \"content-type: application/json\" -d @event.json"
+          "curl": "curl -X POST http://127.0.0.1:{port}/api/events -H \"content-type: application/json\" -d @event.json"
         },
         {
           "id": "eco.state",
@@ -62,7 +62,7 @@
               "memMB": 486
             }
           },
-          "curl": "curl http://127.0.0.1:57821/api/state"
+          "curl": "curl http://127.0.0.1:{port}/api/state"
         },
         {
           "id": "eco.config.read",
@@ -82,7 +82,7 @@
               "platforms": ["generic", "codebuddy", "codex", "deepseek", "vibe"]
             }
           },
-          "curl": "curl http://127.0.0.1:57821/api/config"
+          "curl": "curl http://127.0.0.1:{port}/api/config"
         },
         {
           "id": "eco.config.write",
@@ -106,7 +106,7 @@
               "trimCooldownMs": 120000
             }
           },
-          "curl": "curl -X POST http://127.0.0.1:57821/api/config -H \"content-type: application/json\" -d \"{\\\"cpuThreshold\\\":70}\""
+          "curl": "curl -X POST http://127.0.0.1:{port}/api/config -H \"content-type: application/json\" -d \"{\\\"cpuThreshold\\\":70}\""
         }
       ]
     },
@@ -151,7 +151,7 @@
               "lastSeen": "2026-11-24T09:15:33+08:00"
             }
           },
-          "curl": "curl -X POST http://127.0.0.1:57911/api/entry -H \"content-type: application/json\" -d @entry.json"
+          "curl": "curl -X POST http://127.0.0.1:{port}/api/entry -H \"content-type: application/json\" -d @entry.json"
         },
         {
           "id": "errvault.search",
@@ -180,7 +180,7 @@
               }
             ]
           },
-          "curl": "curl \"http://127.0.0.1:57911/api/search?q=%E6%96%87%E4%BB%B6%E8%A2%AB%E5%8D%A0%E7%94%A8&limit=5\""
+          "curl": "curl \"http://127.0.0.1:{port}/api/search?q=%E6%96%87%E4%BB%B6%E8%A2%AB%E5%8D%A0%E7%94%A8&limit=5\""
         },
         {
           "id": "errvault.stats",
@@ -199,7 +199,7 @@
             "bySeverity": { "major": 7, "blocker": 3, "minor": 2 },
             "topRecur": [{ "id": "ERR-…", "count": 4, "symptom": "The process cannot access the file…" }]
           },
-          "curl": "curl http://127.0.0.1:57911/api/stats"
+          "curl": "curl http://127.0.0.1:{port}/api/stats"
         },
         {
           "id": "errvault.logs",
@@ -214,7 +214,7 @@
             "total": 128,
             "lines": ["2026-11-24 09:15:33  INFO   add   ERR-…  kind=blocked  scope=machine  count=1"]
           },
-          "curl": "curl \"http://127.0.0.1:57911/api/logs?tail=50\""
+          "curl": "curl \"http://127.0.0.1:{port}/api/logs?tail=50\""
         }
       ]
     },
@@ -238,7 +238,7 @@
             "bytes": 12044,
             "text": "#!/usr/bin/env node\n…"
           },
-          "curl": "curl \"http://127.0.0.1:57910/api/file?path=E%3A%5CAIWorkKit%5Cpayload%5Ctools%5Claunch.mjs\""
+          "curl": "curl \"http://127.0.0.1:{port}/api/file?path=E%3A%5CAIWorkKit%5Cpayload%5Ctools%5Claunch.mjs\""
         },
         {
           "id": "codevault.launch",
@@ -247,8 +247,8 @@
           "path": "/api/launch",
           "desc": "只允许本机调用；带请求体时必须是 JSON。",
           "request": { "app": "eco" },
-          "response": { "ok": true, "app": "eco", "started": false, "url": "http://127.0.0.1:57821/" },
-          "curl": "curl -X POST http://127.0.0.1:57910/api/launch -H \"content-type: application/json\" -d \"{\\\"app\\\":\\\"eco\\\"}\""
+          "response": { "ok": true, "app": "eco", "started": false, "url": "http://127.0.0.1:{port}/" },
+          "curl": "curl -X POST http://127.0.0.1:{port}/api/launch -H \"content-type: application/json\" -d \"{\\\"app\\\":\\\"eco\\\"}\""
         }
       ]
     }

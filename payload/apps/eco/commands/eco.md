@@ -33,6 +33,6 @@ node "${AIWORKKIT_PLUGIN_ROOT}/cli/eco.js" open
 
 ## 说明
 
-- 端口默认 `47821`，可用环境变量 `AIWORKKIT_ECO_PORT` 覆盖。
+- 端口默认 `57821`，可用环境变量 `AIWORKKIT_ECO_PORT` 覆盖。
 - 该命令只读展示，不会终止任何正在运行的任务。
 - 需要为某条流程补充进度时使用：`eco report --id <id> --current N --total M`。

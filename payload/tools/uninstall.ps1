@@ -57,7 +57,7 @@ if (Test-Path $stopJs) {
 } else {
   # 目录已被部分删除：直接按端口找
   $configFile = Join-Path $Target 'config\deploy.json'
-  $ports = @(47910, 47821, 47822)
+  $ports = @(57910, 57821, 57822)
   if (Test-Path $configFile) {
     try {
       $cfg = Get-Content $configFile -Raw -Encoding UTF8 | ConvertFrom-Json

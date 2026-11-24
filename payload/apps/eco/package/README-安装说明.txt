@@ -22,7 +22,7 @@ AIWorkKit 插件 + 本地监控守护进程：实时显示正在运行的插件�
   2. 把插件装到 %USERPROFILE%\.codebuddy\plugins\marketplaces\eco-market
   3. 注册插件市场（known_marketplaces / installed_plugins / settings.enabledPlugins）
   4. 写入规则 %USERPROFILE%\.codebuddy\rules\eco-first.mdc（路径按本机实际位置生成）
-  5. 启动守护进程（后台，端口 47821）
+  5. 启动守护进程（后台，端口 57821）
 
 被修改的 json 与规则文件都会先备份成 *.bak_eco_<时间戳>，可随时回滚。
 
@@ -48,7 +48,7 @@ AIWorkKit 插件 + 本地监控守护进程：实时显示正在运行的插件�
 验证是否正常
 ------------
   node "<安装路径>\cli\eco.js" status
-     期望输出：http://127.0.0.1:47821/  pid ...  up ...s / jobs: ... / scripts: ... / plugins: ...
+     期望输出：http://127.0.0.1:57821/  pid ...  up ...s / jobs: ... / scripts: ... / plugins: ...
 
   node "<安装路径>\cli\eco.js" open
      应弹出独立窗口；顶部「Hook 采集」为绿色说明 hook 已接入
@@ -65,7 +65,7 @@ AIWorkKit 插件 + 本地监控守护进程：实时显示正在运行的插件�
 常见问题
 --------
 - 提示"未检测到 node"：先安装 Node.js 18+，重开终端再运行
-- 端口被占用：设环境变量 AIWORKKIT_ECO_PORT=47822 后再装，命令与看板需一致
+- 端口被占用：设环境变量 AIWORKKIT_ECO_PORT=57822 后再装，命令与看板需一致
 - 双击 install.cmd 闪退：改为在 PowerShell 里执行
     powershell -NoProfile -ExecutionPolicy Bypass -File install.ps1
 - 想确认没装错：先跑 install.cmd -DryRun 看计划动作

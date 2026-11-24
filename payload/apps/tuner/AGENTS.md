@@ -9,7 +9,7 @@
 ```
 core/tuner-core.ps1     全部业务逻辑（进程枚举、trim、挂起、状态）
 core/tuner.ps1          入口（被 cli 与 hook 调用）
-server/tuner-server.js  面板 HTTP 服务（默认 47822）
+server/tuner-server.js  面板 HTTP 服务（默认 57822）
 cli/tuner.js            命令行：status / trim / apply / quiet / restore / auto / tray
 hooks/tuner-hook.js     IDE hook 入口
 tray/tray.ps1           托盘
@@ -40,7 +40,7 @@ powershell -File core\tuner.ps1 -Action trim -SystemCache   # 连带清系统缓
 
 ## 陷阱
 
-1. **`--port` 必须真的被应用**。`parseArgs()` 曾定义了却从未调用，导致部署后死抢默认 47822 端口。改参数解析时确认它在加载时被调用了。
+1. **`--port` 必须真的被应用**。`parseArgs()` 曾定义了却从未调用，导致部署后死抢默认 57822 端口。改参数解析时确认它在加载时被调用了。
 2. **`TOKEN_PRIVILEGES` 的 LUID 不能用 `long`**。CLR 会按 8 字节对齐插入填充，`AdjustTokenPrivileges` 返回 True 但 `GetLastError=1300`，权限实际没启用。必须拆成 `LuidLow` / `LuidHigh` 两个 int，并检查 last error。
 3. **trim 后立刻读数会失真**。工作集被清空后进程马上又会缺页调入，所以 `Invoke-TunerTrim` 里等了 2 秒再取 `settledMB`。不要去掉这个等待。
 4. **`core/*.ps1` 必须 UTF-8 BOM**，否则 PS 5.1 按 GBK 解析报语法错。

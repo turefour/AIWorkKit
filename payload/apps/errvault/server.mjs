@@ -6,8 +6,8 @@
  * @category system
  * @purpose 记录 AIWorkKit 运行中的报错 / 卡死 / 被拦截事件，附根因、解决方案和最小复现代码，
  *          供下次遇到同类问题时优先检索，避免重复试错。
- * @input  --port N（默认 47911）
- * @usage  node server.mjs --port 47911
+ * @input  --port N（默认 57911）
+ * @usage  node server.mjs --port 57911
  * @reuse  yes
  *
  * 路由
@@ -53,7 +53,7 @@ const APP_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const WEB_DIR = path.join(APP_ROOT, 'web');
 
 const HOST = process.env.ERRVAULT_HOST || '127.0.0.1';
-let PORT = Number(process.env.ERRVAULT_PORT || 47911);
+let PORT = Number(process.env.ERRVAULT_PORT || 57911);
 
 /* 请求体上限：条目正文 + 一个片段，512 KB 足够，也挡住误传的大文件 */
 const MAX_BODY = 512 * 1024;

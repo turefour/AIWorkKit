@@ -62,9 +62,9 @@ if (Test-Path $configFile) {
   Add-Result '文件' 'config\deploy.json' 'fail' '缺失'
 }
 
-$portCodevault = if ($config -and $config.ports) { [int]$config.ports.codevault } else { 47910 }
-$portEco = if ($config -and $config.ports) { [int]$config.ports.eco } else { 47821 }
-$portTuner = if ($config -and $config.ports) { [int]$config.ports.tuner } else { 47822 }
+$portCodevault = if ($config -and $config.ports) { [int]$config.ports.codevault } else { 57910 }
+$portEco = if ($config -and $config.ports) { [int]$config.ports.eco } else { 57821 }
+$portTuner = if ($config -and $config.ports) { [int]$config.ports.tuner } else { 57822 }
 
 # ---------------------------------------------------------------- 一、文件完整性
 $required = @(

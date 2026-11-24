@@ -370,6 +370,6 @@ console.log(
 );
 if (indexInfo.ok) console.log('索引刷新  : ' + (scanInfo.ok ? '已完成' : '失败（可手动跑 scan.mjs）'));
 console.log('');
-console.log('打开 http://127.0.0.1:47910/#__repos__ 可看到该仓库状态。');
+console.log('打开 http://127.0.0.1:57910/#__repos__ 可看到该仓库状态。');
 
 if (commitInfo.action === 'failed') process.exitCode = 1;

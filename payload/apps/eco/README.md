@@ -23,7 +23,7 @@ AIWorkKit 运行时监控插件：实时采集**当前运行的插件、脚本�
   任意程序 ──────────── POST /api/progress（ECO_JOB_ID 环境变量）───────────────┤
                                                                                   ▼
                                               ┌───────────────────────────────────────────┐
-                                              │  server/eco-server.js  (127.0.0.1:47821) │
+                                              │  server/eco-server.js  (127.0.0.1:57821) │
                                               │                                           │
                                               │  Store  ← 任务 / 进度 / 样本窗口            │
                                               │  procscan   进程采样（CPU / 内存 / 命令行） │
@@ -88,7 +88,7 @@ node cli/eco.js status            # 终端查看概要
 ### 2.3 CLI 速查
 
 ```bash
-node cli/eco.js server [--port 47821] [--daemon] [--open] [--no-proc] [--cwd DIR]
+node cli/eco.js server [--port 57821] [--daemon] [--open] [--no-proc] [--cwd DIR]
 node cli/eco.js open | status | stop | clear
 node cli/eco.js report --id build --label "构建" --current 35 --total 120 --unit 文件
 node cli/eco.js log    --id build --message "cache hit" --level info
@@ -154,7 +154,7 @@ node cli/eco.js run    --label "pytest" -- <command ...>
 示例：
 
 ```bash
-curl -X POST http://127.0.0.1:47821/api/progress \
+curl -X POST http://127.0.0.1:57821/api/progress \
   -H "content-type: application/json" \
   -d '{"id":"etl","label":"订单 ETL","current":3200,"total":10000,"unit":"行"}'
 ```
@@ -200,7 +200,7 @@ Agent 使用清单类工具（todo / plan / task list）时，其负载里天然
 
 `eco open` 打开的是**独立窗口**：Chromium 的 `--app` 模式 + 专属 profile（`.eco/window-profile`），
 没有地址栏、标签栏、书签栏，任务栏独立成组；再次 `open` 只会把已有窗口前置，不会重复开窗。
-页面地址仍是 `http://127.0.0.1:47821/`，UI 与浏览器模式完全一致（同一份前端资源）。
+页面地址仍是 `http://127.0.0.1:57821/`，UI 与浏览器模式完全一致（同一份前端资源）。
 想固定到桌面/开始菜单：
 
 ```powershell
@@ -236,7 +236,7 @@ powershell -ExecutionPolicy Bypass -File scripts\create-shortcut.ps1
 
 | 项 | 方式 | 默认 |
 | --- | --- | --- |
-| 端口 | `AIWORKKIT_ECO_PORT` / `--port` / `.eco/config.json` | `47821` |
+| 端口 | `AIWORKKIT_ECO_PORT` / `--port` / `.eco/config.json` | `57821` |
 | 监听地址 | 固定 | `127.0.0.1`（不对外） |
 | 进程采样间隔 | `--interval <ms>` | `3000` |
 | 关闭进程采样 | `--no-proc` | 开启 |
@@ -263,7 +263,7 @@ logs/error.log          错误 + 堆栈
 ```powershell
 Get-Content .\logs\error.log -Tail 40
 Get-Content .\logs\server.log -Tail 40
-Invoke-RestMethod http://127.0.0.1:47821/api/health
+Invoke-RestMethod http://127.0.0.1:57821/api/health
 Get-Content .\.eco\hook-queue.jsonl -Tail 5   # hook 是否在排队
 ```
 

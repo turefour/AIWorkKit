@@ -5,7 +5,7 @@
 // 自检不通过时不会显示"部署完成"，而是列出失败项。
 //
 // 静默模式（供自动化验证）：
-//   installer.exe --silent --target "D:\Kit" --port 47910 --eco 47821 --tuner 47822 --lan
+//   installer.exe --silent --target "D:\Kit" --port 57910 --eco 57821 --tuner 57822 --lan
 //   退出码：0 成功 / 1 检测或自检失败 / 2 参数或环境错误
 //
 // 编译（系统自带，无需安装任何东西）：
@@ -33,9 +33,9 @@ namespace AIWorkKit
         internal static string PackageVersion = "0.0.0";
         internal static bool Silent;
         internal static string TargetDir;
-        internal static int PortCodevault = 47910;
-        internal static int PortEco = 47821;
-        internal static int PortTuner = 47822;
+        internal static int PortCodevault = 57910;
+        internal static int PortEco = 57821;
+        internal static int PortTuner = 57822;
         internal static bool AllowLan;
         internal static bool NoDesktop;
 
@@ -95,9 +95,9 @@ namespace AIWorkKit
                 else if (a == "--lan") AllowLan = true;
                 else if (a == "--no-desktop") NoDesktop = true;
                 else if (a == "--target" && i + 1 < args.Length) TargetDir = args[++i];
-                else if (a == "--port" && i + 1 < args.Length) PortCodevault = ToInt(args[++i], 47910);
-                else if (a == "--eco" && i + 1 < args.Length) PortEco = ToInt(args[++i], 47821);
-                else if (a == "--tuner" && i + 1 < args.Length) PortTuner = ToInt(args[++i], 47822);
+                else if (a == "--port" && i + 1 < args.Length) PortCodevault = ToInt(args[++i], 57910);
+                else if (a == "--eco" && i + 1 < args.Length) PortEco = ToInt(args[++i], 57821);
+                else if (a == "--tuner" && i + 1 < args.Length) PortTuner = ToInt(args[++i], 57822);
                 else if (a == "--help" || a == "-h")
                 {
                     Console.WriteLine("installer.exe [--silent] [--target DIR] [--port N] [--eco N] [--tuner N] [--lan] [--no-desktop]");
@@ -519,9 +519,9 @@ namespace AIWorkKit
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("本次安装会在你选定的目录中部署一整套本地工作环境，并在 AIWorkKit 中登记使用规则：");
             sb.AppendLine();
-            sb.AppendLine("  1. CodeVault 索引库      项目索引 / 源码查看 / 仓库状态 / 脚本库（默认 47910）");
-            sb.AppendLine("  2. AIWorkKit Eco       AI 编程进度看板，含重复测试进程守护（默认 47821）");
-            sb.AppendLine("  3. Idle Tuner            IDE 空闲降温面板：回收内存、降优先级、挂起进程（默认 47822）");
+            sb.AppendLine("  1. CodeVault 索引库      项目索引 / 源码查看 / 仓库状态 / 脚本库（默认 57910）");
+            sb.AppendLine("  2. AIWorkKit Eco       AI 编程进度看板，含重复测试进程守护（默认 57821）");
+            sb.AppendLine("  3. Idle Tuner            IDE 空闲降温面板：回收内存、降优先级、挂起进程（默认 57822）");
             sb.AppendLine("  4. ScriptVault 脚本库    公共模块 + 可复用工具 + 回归测试，含项目接入工具 adopt-project");
             sb.AppendLine("  5. 全局规则              ~\\.codebuddy\\rules\\deploy-target.mdc");
             sb.AppendLine("                           让 AIWorkKit 在本机优先复用上述工具，并在任务收尾自动做版本管理");

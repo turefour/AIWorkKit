@@ -201,7 +201,7 @@ function main() {
       console.log('');
       console.log('示例：');
       console.log('  node tools/snippet.mjs search 截图');
-      console.log('  node tools/snippet.mjs run shot --url http://127.0.0.1:47910 --out x.png');
+      console.log('  node tools/snippet.mjs run shot --url http://127.0.0.1:57910 --out x.png');
       return command ? 2 : 0;
   }
 }

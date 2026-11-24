@@ -5,7 +5,7 @@
  * @purpose Capture a local page over CDP: screenshot, console errors, node counts.
  * @input  --url <url> [--out png] [--width 1440] [--height 1000] [--wait 3000]
  *         [--port 9333] [--launch] [--close] [--json]
- * @usage  node tools/shot.mjs --url http://127.0.0.1:47910/ --launch --out shot.png --close
+ * @usage  node tools/shot.mjs --url http://127.0.0.1:57910/ --launch --out shot.png --close
  * @reuse  yes
  */
 
@@ -28,8 +28,8 @@ const SPEC = {
     ['--json', 'print only the JSON result (machine readable)']
   ],
   examples: [
-    'node tools/shot.mjs --url http://127.0.0.1:47910/ --launch --out shot.png --close',
-    'node tools/shot.mjs --url http://127.0.0.1:47910/#__repos__ --json'
+    'node tools/shot.mjs --url http://127.0.0.1:57910/ --launch --out shot.png --close',
+    'node tools/shot.mjs --url http://127.0.0.1:57910/#__repos__ --json'
   ]
 };
 

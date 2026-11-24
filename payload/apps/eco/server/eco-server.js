@@ -137,7 +137,7 @@ function parseArgs(argv) {
 
 const args = parseArgs(process.argv.slice(2));
 const cfg = readConfig();
-const PORT = Number(process.env.AIWORKKIT_ECO_PORT || args.port || cfg.port || 47821);
+const PORT = Number(process.env.AIWORKKIT_ECO_PORT || args.port || cfg.port || 57821);
 // Bind address is configurable so a deployed copy can serve the LAN when needed.
 const HOST = process.env.AIWORKKIT_ECO_HOST || '127.0.0.1';
 

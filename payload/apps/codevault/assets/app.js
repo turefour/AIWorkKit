@@ -19,25 +19,25 @@ const EMBEDS = {
     app: 'eco',
     name: '实时看板 · Eco',
     sub: '任务进度 · 工具调用',
-    url: 'http://127.0.0.1:47821/',
+    url: 'http://127.0.0.1:57821/',
     desc: '运行中的任务、工具调用、进度百分比与人工处置（跳过 / 重试 / 终止）。',
-    hint: 'node eco/cli/eco.js server --daemon'
+    hint: 'node apps/eco/cli/eco.js server --daemon'
   },
   __tuner__: {
     app: 'tuner',
     name: '降温面板 · Tuner',
     sub: '内存回收 · 进程挂起',
-    url: 'http://127.0.0.1:47822/',
+    url: 'http://127.0.0.1:57822/',
     desc: 'IDE 内存占用、工作集回收、进程优先级与挂起/恢复控制。',
-    hint: 'node tuner/server/tuner-server.js --port 47822'
+    hint: 'node tuner/server/tuner-server.js --port 57822'
   },
   __errvault__: {
     app: 'errvault',
     name: '报错库 · errvault',
     sub: '报错 / 卡死 / 拦截的解法索引',
-    url: 'http://127.0.0.1:47911/',
+    url: 'http://127.0.0.1:57911/',
     desc: '任务中遇到的报错、卡死、被系统拦截事件，连同根因与正确做法一起留档；下次遇到同类问题先在这里检索，不要从头试错。',
-    hint: 'node apps/errvault/server.mjs --port 47911'
+    hint: 'node apps/errvault/server.mjs --port 57911'
   }
 };
 
@@ -799,7 +799,9 @@ function showApiFormat(group, ep) {
     dlg.appendChild(el('div', 'api-sec-title', '命令行示例'));
     const pre = document.createElement('pre');
     pre.className = 'api-pre';
-    pre.textContent = ep.curl;
+    // 目录里的 {port} 在渲染时换成该分组的真实端口：
+    // 用户改过端口后示例仍然可用，不会指着一个不存在的地址
+    pre.textContent = String(ep.curl).replace(/\{port\}/g, group.resolvedPort || '');
     dlg.appendChild(pre);
   }
 

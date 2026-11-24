@@ -7,13 +7,13 @@
 # 用法：
 #   powershell -ExecutionPolicy Bypass -File check-env.ps1
 #   powershell -ExecutionPolicy Bypass -File check-env.ps1 -Json
-#   powershell -ExecutionPolicy Bypass -File check-env.ps1 -Target "C:\Kit" -Port 47910
+#   powershell -ExecutionPolicy Bypass -File check-env.ps1 -Target "C:\Kit" -Port 57910
 # ============================================================================
 param(
   [string]$Target = "$env:LOCALAPPDATA\AIWorkKit",
-  [int]$Port = 47910,
-  [int]$EcoPort = 47821,
-  [int]$TunerPort = 47822,
+  [int]$Port = 57910,
+  [int]$EcoPort = 57821,
+  [int]$TunerPort = 57822,
   [switch]$Json
 )
 

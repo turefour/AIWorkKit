@@ -13,7 +13,7 @@ node "${AIWORKKIT_PLUGIN_ROOT}/cli/tuner.js" open
 
 该命令会：
 
-1. 若本地仪表盘服务未运行，先以隐藏进程拉起（`127.0.0.1:47822`，端口可用
+1. 若本地仪表盘服务未运行，先以隐藏进程拉起（`127.0.0.1:57822`，端口可用
    `AIWORKKIT_TUNER_PORT` 覆盖）
 2. 用 Chromium `--app` 模式打开无地址栏独立窗口（Edge / Chrome，自带独立
    user-data-dir，任务栏独立图标）

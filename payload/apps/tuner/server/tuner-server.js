@@ -68,7 +68,7 @@ function loadApiToken() {
 
 const API_TOKEN = loadApiToken();
 
-let PORT = Number(process.env.AIWORKKIT_TUNER_PORT || 47822);
+let PORT = Number(process.env.AIWORKKIT_TUNER_PORT || 57822);
 
 function parseArgs(argv) {
   for (let i = 0; i < argv.length; i += 1) {
@@ -79,7 +79,7 @@ function parseArgs(argv) {
 }
 
 // Apply CLI overrides at load time. This call was missing, so `--port` was
-// silently ignored and a deployed copy always fought over the default 47822.
+// silently ignored and a deployed copy always fought over the default 57822.
 parseArgs(process.argv.slice(2));
 
 function log(message) {

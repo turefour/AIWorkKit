@@ -25,9 +25,9 @@ namespace WorkKit.Native
         // ---------------------------------------------------------- 状态
 
         private readonly string _kitRoot;
-        private int _port = 47910;
-        private int _eco = 47821;
-        private int _tuner = 47822;
+        private int _port = 57910;
+        private int _eco = 57821;
+        private int _tuner = 57822;
         private string _bindHost = "127.0.0.1";
 
         private sealed class ShellError

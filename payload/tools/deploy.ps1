@@ -16,10 +16,10 @@
 # ============================================================================
 param(
   [string]$Target = "$env:LOCALAPPDATA\AIWorkKit",
-  [int]$Port = 47910,
-  [int]$EcoPort = 47821,
-  [int]$TunerPort = 47822,
-  [int]$ErrvaultPort = 47911,
+  [int]$Port = 57910,
+  [int]$EcoPort = 57821,
+  [int]$TunerPort = 57822,
+  [int]$ErrvaultPort = 57911,
   [switch]$Lan,
   [switch]$NoDesktop,
   [switch]$NoRules,

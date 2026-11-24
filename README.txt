@@ -5,9 +5,9 @@ AIWorkKit 工作套件 1.0.0
 
 包含内容
 --------
-  CodeVault 索引库      项目索引 / 源码查看 / 仓库状态 / 脚本库（Web，默认 47910）
-  AIWorkKit Eco       AI 编程进度看板 + 重复测试进程守护（默认 47821）
-  Idle Tuner            IDE 空闲降温面板（默认 47822）
+  CodeVault 索引库      项目索引 / 源码查看 / 仓库状态 / 脚本库（Web，默认 57910）
+  AIWorkKit Eco       AI 编程进度看板 + 重复测试进程守护（默认 57821）
+  Idle Tuner            IDE 空闲降温面板（默认 57822）
   ScriptVault 脚本库    公共模块 / 可复用工具 / 回归测试 / 项目接入工具
   全局规则              ~\.codebuddy\rules\deploy-target.mdc
 
@@ -28,7 +28,7 @@ AIWorkKit 工作套件 1.0.0
 
 静默安装（脚本化部署）
 --------------------
-  installer.exe --silent --target "D:\AIWorkKit" --port 47910 --eco 47821 --tuner 47822
+  installer.exe --silent --target "D:\AIWorkKit" --port 57910 --eco 57821 --tuner 57822
   退出码：0 成功 / 1 检测或自检失败 / 2 参数或环境错误
 
 系统要求

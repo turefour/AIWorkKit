@@ -27,15 +27,18 @@ $Payload = Join-Path $KitRoot 'payload'
 $AppsDir = Join-Path $Payload 'apps'
 $RuntimeDir = Join-Path $Payload 'runtime'
 
+# 只在显式传 -RefreshApps 时才会用到这些上游目录。
+# 通用版把 payload\apps 当作唯一源码来源；这里仅保留「开发机可能存在的上游仓库」，
+# 目录不存在时 Copy-Filtered 会打印 [skip] 并继续，不会让打包失败。
 $Sources = @{
-  codevault   = 'C:\Users\GH\Desktop\CodeVault'
-  eco       = 'C:\Users\GH\AIWorkKit\20261029081733\eco'
-  tuner       = 'C:\Users\GH\AIWorkKit\20261029081733\tuner'
-  scriptvault = 'C:\Users\GH\Desktop\ScriptVault'
+  codevault   = (Join-Path $env:USERPROFILE 'Desktop\CodeVault')
+  eco         = (Join-Path $env:USERPROFILE 'CodeBuddy\codebuddy-pulse')
+  tuner       = (Join-Path $env:USERPROFILE 'CodeBuddy\codebuddy-idle-tuner')
+  scriptvault = (Join-Path $env:USERPROFILE 'Desktop\ScriptVault')
 }
 
 $NodeExe = 'C:\Program Files\nodejs\node.exe'
-$MinGit = 'C:\Users\GH\AIWorkKit\20261029081733\.tools\mingit'
+$MinGit = Join-Path $PSScriptRoot '..\payload\runtime\git'
 
 # 按路径段排除：整串通配（'*\node_modules\*'）匹配不到顶层目录，会误带几百 MB
 $ExcludeSegments = @(

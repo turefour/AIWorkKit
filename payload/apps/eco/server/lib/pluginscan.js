@@ -79,21 +79,72 @@ function describe(root, meta, ctx) {
   };
 }
 
-/** Enabled plugin names come from ~/.codebuddy/settings.json `enabledPlugins`. */
+/**
+ * 平台档案（config/platforms.json）。
+ *
+ * 旧版把插件目录和 settings 路径写死成某个平台的 ~/.xxx，
+ * 换平台就等于这个面板全空。现在有几个平台就扫几个。
+ */
+function loadPlatformProfiles() {
+  try {
+    const file = path.resolve(__dirname, '../../../../config/platforms.json');
+    const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
+    const home = os.homedir();
+    const expand = (p) => {
+      if (!p) return '';
+      const s = String(p).replace(/^~/, home).replace(/%([^%]+)%/g, (m, n) => process.env[n] || m);
+      return path.resolve(s);
+    };
+    return Object.keys(raw.platforms || {})
+      .map((k) => {
+        const p = raw.platforms[k] || {};
+        return { id: k, label: p.label || k, settings: expand(p.settingsFile), plugins: expand(p.pluginsDir) };
+      })
+      .filter((p) => p.settings || p.plugins);
+  } catch (_) {
+    return [];
+  }
+}
+
+/** 所有平台的插件目录；配置缺失时退回默认位置，保证老机器仍可用 */
+function pluginRoots(home) {
+  const fromCfg = loadPlatformProfiles()
+    .map((p) => p.plugins)
+    .filter(Boolean);
+  const roots = fromCfg.length ? fromCfg.slice() : [path.join(home, '.aiworkkit', 'plugins')];
+  // 兼容：这个目录历史最久，即使没写进配置也扫一遍
+  const legacy = path.join(home, '.codebuddy', 'plugins');
+  if (!roots.includes(legacy)) roots.push(legacy);
+  return roots;
+}
+
+/** 插件开关写回哪个 settings：优先已存在的那个平台 */
 function settingsFile() {
-  return path.join(os.homedir(), '.codebuddy', 'settings.json');
+  const profiles = loadPlatformProfiles().filter((p) => p.settings);
+  for (const p of profiles) {
+    if (safeStat(p.settings)) return p.settings;
+  }
+  if (profiles.length) return profiles[0].settings;
+  return path.join(os.homedir(), '.aiworkkit', 'settings.json');
 }
 
 function loadEnabledNames() {
   const names = new Set();
-  try {
-    const raw = JSON.parse(fs.readFileSync(settingsFile(), 'utf8'));
-    const map = (raw && raw.enabledPlugins) || {};
-    for (const [key, value] of Object.entries(map)) {
-      if (value) names.add(String(key).split('@')[0]);
+  const files = loadPlatformProfiles()
+    .map((p) => p.settings)
+    .filter(Boolean);
+  if (!files.length) files.push(settingsFile());
+
+  for (const file of files) {
+    try {
+      const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
+      const map = (raw && raw.enabledPlugins) || {};
+      for (const [key, value] of Object.entries(map)) {
+        if (value) names.add(String(key).split('@')[0]);
+      }
+    } catch (_) {
+      /* 该平台没装或没启用插件 */
     }
-  } catch (_) {
-    /* settings is optional */
   }
   return names;
 }
@@ -120,32 +171,39 @@ function listDirs(dir) {
 
 function collect(cwd) {
   const home = os.homedir();
-  const pluginsRoot = path.join(home, '.codebuddy', 'plugins');
+  const roots = pluginRoots(home);
   const found = new Map();
 
-  const marketplaces = listDirs(path.join(pluginsRoot, 'marketplaces'));
-  for (const market of marketplaces) {
-    const marketName = path.basename(market);
-    for (const bucket of ['plugins', 'external_plugins']) {
-      for (const dir of listDirs(path.join(market, bucket))) {
-        const entry = describe(dir, null, { cwd, marketplace: marketName });
+  for (const pluginsRoot of roots) {
+    // 市场安装的插件
+    for (const market of listDirs(path.join(pluginsRoot, 'marketplaces'))) {
+      const marketName = path.basename(market);
+      for (const bucket of ['plugins', 'external_plugins']) {
+        for (const dir of listDirs(path.join(market, bucket))) {
+          const entry = describe(dir, null, { cwd, marketplace: marketName });
+          found.set(entry.root.toLowerCase(), entry);
+        }
+      }
+    }
+
+    // 本地直接安装（非市场）
+    for (const dir of listDirs(pluginsRoot)) {
+      if (path.basename(dir) === 'marketplaces') continue;
+      if (safeStat(path.join(dir, '.codebuddy-plugin', 'plugin.json'))) {
+        const entry = describe(dir, null, { cwd });
         found.set(entry.root.toLowerCase(), entry);
       }
     }
   }
 
-  // Locally installed (non-marketplace) plugins.
-  for (const dir of listDirs(pluginsRoot)) {
-    if (path.basename(dir) === 'marketplaces') continue;
-    if (safeStat(path.join(dir, '.codebuddy-plugin', 'plugin.json'))) {
-      const entry = describe(dir, null, { cwd });
-      found.set(entry.root.toLowerCase(), entry);
-    }
-  }
-
-  // Project-scoped plugins.
+  // 项目内插件：各平台的目录约定都看一遍
   if (cwd) {
-    for (const base of [path.join(cwd, '.codebuddy', 'plugins'), path.join(cwd, 'plugins')]) {
+    const platformDirs = ['.aiworkkit', '.codebuddy', '.codex', '.deepseek', '.vibe'];
+    const bases = [];
+    for (const dir of platformDirs) bases.push(path.join(cwd, dir, 'plugins'));
+    bases.push(path.join(cwd, 'plugins'));
+
+    for (const base of bases) {
       for (const dir of listDirs(base)) {
         if (safeStat(path.join(dir, '.codebuddy-plugin', 'plugin.json'))) {
           const entry = describe(dir, null, { cwd });

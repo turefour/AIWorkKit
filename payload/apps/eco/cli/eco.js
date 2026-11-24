@@ -37,7 +37,7 @@ function readConfig() {
   }
 }
 
-let PORT = Number(process.env.AIWORKKIT_ECO_PORT || readConfig().port || 47821);
+let PORT = Number(process.env.AIWORKKIT_ECO_PORT || readConfig().port || 57821);
 const HOST = '127.0.0.1';
 
 function request(method, urlPath, body, timeout) {

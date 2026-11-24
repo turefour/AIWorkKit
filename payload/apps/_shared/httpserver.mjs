@@ -3,7 +3,7 @@
  * @category system
  * @purpose Zero-dependency HTTP layer distilled from the three local dashboards: routes, JSON, static, CSRF guard, SSE.
  * @input  createApp({ root, token, tokenHeader })
- * @usage  const app = createApp({ root: process.cwd() }); app.get('/api/health', ...); app.listen(47910);
+ * @usage  const app = createApp({ root: process.cwd() }); app.get('/api/health', ...); app.listen(57910);
  * @reuse  yes
  */
 

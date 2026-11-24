@@ -41,7 +41,7 @@ function resolvePort() {
   } catch (_) {
     /* config is optional */
   }
-  return 47821;
+  return 57821;
 }
 
 function readStdin() {

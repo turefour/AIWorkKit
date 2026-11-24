@@ -57,14 +57,14 @@ const CODE_ROOTS = (
 // Bind address is configurable: a deployed copy may need LAN access
 // (CODEVAULT_HOST=0.0.0.0) while a developer machine stays on loopback.
 const HOST = process.env.CODEVAULT_HOST || CFG.host || '127.0.0.1';
-let PORT = Number(process.env.CODEVAULT_PORT || CFG_PORTS.codevault || 47910);
+let PORT = Number(process.env.CODEVAULT_PORT || CFG_PORTS.codevault || 57910);
 const MAX_BYTES = 512 * 1024;
 
 /* Embedded plugins: 端口取自配置，CLI 指向本套件自己的 apps 目录
    （原来指向开发工作区，等于让页面去拉起另一份代码，端口/路径都可能对不上）。 */
-const ECO_PORT = Number(CFG_PORTS.eco || 47821);
-const TUNER_PORT = Number(CFG_PORTS.tuner || 47822);
-const ERRVAULT_PORT = Number(CFG_PORTS.errvault || 47911);
+const ECO_PORT = Number(CFG_PORTS.eco || 57821);
+const TUNER_PORT = Number(CFG_PORTS.tuner || 57822);
+const ERRVAULT_PORT = Number(CFG_PORTS.errvault || 57911);
 
 const APPS = {
   eco: {

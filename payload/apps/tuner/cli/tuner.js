@@ -45,7 +45,7 @@ function readConfig() {
 }
 
 function serverPort() {
-  return Number(process.env.AIWORKKIT_TUNER_PORT || 47822);
+  return Number(process.env.AIWORKKIT_TUNER_PORT || 57822);
 }
 
 function dashboardUrl() {

@@ -40,7 +40,7 @@ ScriptVault/
  * @category browser
  * @purpose Capture a local page over CDP...
  * @input  --url <url> [--out png]
- * @usage  node tools/shot.mjs --url http://127.0.0.1:47910/
+ * @usage  node tools/shot.mjs --url http://127.0.0.1:57910/
  * @reuse  yes
  */
 ```
@@ -56,7 +56,7 @@ ScriptVault/
 node build-index.mjs                   # 重建 index.json
 node build-index.mjs --check           # CI 式校验索引是否过期
 node --test tests/                     # 跑回归测试
-node tools/shot.mjs --url http://127.0.0.1:47910/ --launch --out shot.png --close
+node tools/shot.mjs --url http://127.0.0.1:57910/ --launch --out shot.png --close
 node tools/measure-cost.mjs            # 度量复用 vs 从零构建的 token 成本
 node tools/scaffold.mjs my-tool --purpose "..." --category web
 ```
@@ -125,7 +125,7 @@ node tools/adopt-project.mjs "C:\path\to\project" --name my-proj --label "我的
 - 重复执行只更新条目，不会产生两条记录
 - 提交身份优先用 `git config`，未配置时用 `CodeVault / codevault@local` 兜底
 
-接入后打开 `http://127.0.0.1:47910/#__repos__` 即可看到该仓库的提交与未提交数。
+接入后打开 `http://127.0.0.1:57910/#__repos__` 即可看到该仓库的提交与未提交数。
 
 ## 设计原则
 

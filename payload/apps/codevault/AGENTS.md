@@ -7,7 +7,7 @@
 ## 目录地图
 
 ```
-tools/serve.mjs     HTTP 服务（默认 47910）：路由 + 静态资源 + JSON 接口
+tools/serve.mjs     HTTP 服务（默认 57910）：路由 + 静态资源 + JSON 接口
 tools/scan.mjs      项目扫描器：写 data/projects.json
 assets/app.js       前端（无构建、无框架，原生 DOM）
 assets/styles.css   样式
@@ -19,7 +19,7 @@ start.cmd           启动入口
 ## 三条命令
 
 ```powershell
-node tools\serve.mjs        # 起服务（默认 127.0.0.1:47910）
+node tools\serve.mjs        # 起服务（默认 127.0.0.1:57910）
 node tools\scan.mjs         # 重新扫描项目，刷新 data/projects.json
 node tools\git-report.mjs   # 仓库状态（实际脚本在 ScriptVault）
 ```

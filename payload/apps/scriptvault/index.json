@@ -97,7 +97,7 @@
       "category": "system",
       "purpose": "Zero-dependency HTTP layer distilled from the three local dashboards: routes, JSON, static, CSRF guard, SSE.",
       "input": "createApp({ root, token, tokenHeader })",
-      "usage": "const app = createApp({ root: process.cwd() }); app.get('/api/health', ...); app.listen(47910);",
+      "usage": "const app = createApp({ root: process.cwd() }); app.get('/api/health', ...); app.listen(57910);",
       "reuse": true
     },
     {
@@ -292,7 +292,7 @@
       "category": "browser",
       "purpose": "Capture a local page over CDP: screenshot, console errors, node counts.",
       "input": "--url <url> [--out png] [--width 1440] [--height 1000] [--wait 3000]",
-      "usage": "node tools/shot.mjs --url http://127.0.0.1:47910/ --launch --out shot.png --close",
+      "usage": "node tools/shot.mjs --url http://127.0.0.1:57910/ --launch --out shot.png --close",
       "reuse": true
     },
     {

@@ -13,7 +13,7 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 
 const ROOT = path.resolve(__dirname, '..');
-const BASE = 'http://127.0.0.1:' + (process.env.AIWORKKIT_ECO_PORT || 47821);
+const BASE = 'http://127.0.0.1:' + (process.env.AIWORKKIT_ECO_PORT || 57821);
 const results = [];
 
 function check(name, ok, detail) {

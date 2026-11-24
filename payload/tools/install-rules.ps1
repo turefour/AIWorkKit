@@ -20,10 +20,10 @@ param(
   [Parameter(Mandatory = $true)][string]$Target,
   [string]$PackageRoot = '',
   [string]$Platforms = 'auto',
-  [int]$PortCodevault = 47910,
-  [int]$PortEco = 47821,
-  [int]$PortTuner = 47822,
-  [int]$PortErrvault = 47911,
+  [int]$PortCodevault = 57910,
+  [int]$PortEco = 57821,
+  [int]$PortTuner = 57822,
+  [int]$PortErrvault = 57911,
   # 注意：不能叫 -Host，PowerShell 的 $Host 是只读内置变量，赋值会直接报错退出
   [string]$BindAddress = '127.0.0.1',
   [switch]$Json

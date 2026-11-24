@@ -9,7 +9,7 @@
  * @reuse  yes
  *
  * 为什么不能只按端口杀：
- *   端口是共享资源。用户可能自己起了一个开发服务器占着 47821，
+ *   端口是共享资源。用户可能自己起了一个开发服务器占着 57821，
  *   或者上一次异常退出留下了别的程序。进程级 kill 在 Windows 上是
  *   TerminateProcess —— 目标没有任何清理机会，未保存的工作直接丢。
  *
@@ -46,7 +46,7 @@ function readConfig() {
     return JSON.parse(raw);
   } catch {
     // 兜底默认值要和 deploy.json 的默认端口一致
-    return { ports: { codevault: 47910, eco: 47821, tuner: 47822, errvault: 47911 } };
+    return { ports: { codevault: 57910, eco: 57821, tuner: 57822, errvault: 57911 } };
   }
 }
 

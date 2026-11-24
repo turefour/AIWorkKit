@@ -19,7 +19,7 @@ tuner/
 ├─ core/tuner-core.ps1     核心引擎（进程识别、回收、优先级、挂起/唤醒、状态持久化）
 ├─ core/tuner.ps1          CLI 入口（-Action status|trim|apply|restore|auto|resume-watch）
 ├─ cli/tuner.js            Node 前端（中文输出、托盘/窗口启动），插件命令都调用它
-├─ server/tuner-server.js  本地仪表盘服务（127.0.0.1:47822，供独立窗口使用）
+├─ server/tuner-server.js  本地仪表盘服务（127.0.0.1:57822，供独立窗口使用）
 ├─ web/                    独立窗口前端（index.html / style.css / app.js，无构建步骤）
 ├─ tray/tray.ps1           任务栏托盘（独立进程，挂起后唯一的可靠唤醒通道）
 ├─ tray/labels.json        托盘中文文案（独立文件，避免 PS 5.1 编码问题）
@@ -38,7 +38,7 @@ tuner/
 | --- | --- | --- |
 | `trayOnStart` | `true` | 每次启动 AIWorkKit 自动拉起任务栏托盘（已运行则跳过） |
 | `windowOnStart` | `false` | 同时弹出独立仪表盘窗口 |
-| `port` | `47822` | 本地仪表盘端口（也可用环境变量 `AIWORKKIT_TUNER_PORT`） |
+| `port` | `57822` | 本地仪表盘端口（也可用环境变量 `AIWORKKIT_TUNER_PORT`） |
 
 托盘与窗口都是**独立进程**：AIWorkKit 关闭后仍在，重开时只会复用、不重复开。
 配置写在 `%LOCALAPPDATA%\AIWorkKitIdleTuner\config.json`，例如：
@@ -53,7 +53,7 @@ tuner/
 node cli/tuner.js open
 ```
 
-- 自动拉起本地服务（`127.0.0.1:47822`），再用 Edge / Chrome 的 `--app` 模式打开
+- 自动拉起本地服务（`127.0.0.1:57822`），再用 Edge / Chrome 的 `--app` 模式打开
   **无地址栏独立窗口**，独立 `user-data-dir`、任务栏独立图标；已开则只前置
 - 界面内容：工作集大数字 + 近 3 分钟曲线、私有提交 / CPU / 进程数 / 已挂起、
   角色分布条、全进程明细表；右侧动作区：一键降温 / 深度降温 / 只回收内存 /
