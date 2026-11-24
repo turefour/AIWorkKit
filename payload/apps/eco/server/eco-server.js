@@ -29,6 +29,7 @@ const { extractTodos, summarize: summarizeTodos } = require('./lib/todos');
 const { JobLogStore } = require('./lib/joblog');
 const { DecisionStore } = require('./lib/decisions');
 const { DuplicateGuard } = require('./lib/dupguard');
+const procsys = require('./lib/procsys');
 const { extractScriptPath, readScript } = require('./lib/scripts');
 
 const VERSION = '1.0.0';
@@ -996,6 +997,30 @@ async function route(req, res) {
     logger.info('config', 'settings updated', { keys: Object.keys(patch).join(',') });
     scheduleBroadcast();
     return sendJson(res, 200, { ok: true, config: saved });
+  }
+
+  /* ---- 整机资源与进程（「进程与资源」页签） ---- */
+  if (method === 'GET' && pathname === '/api/system') {
+    return sendJson(res, 200, { ok: true, ...procsys.systemUsage() });
+  }
+
+  if (method === 'GET' && pathname === '/api/procs') {
+    const limit = Number(new URLSearchParams((req.url.split('?')[1]) || '').get('limit')) || 40;
+    const result = await procsys.listProcesses({ selfPid: process.pid, limit });
+    return sendJson(res, result.ok ? 200 : 500, result);
+  }
+
+  if (method === 'POST' && pathname === '/api/procs/kill') {
+    const body = (await readBody(req)) || {};
+    if (!body.pid) return sendJson(res, 400, { ok: false, error: 'pid is required' });
+
+    const result = procsys.killProcess(body.pid, { selfPid: process.pid, name: body.name });
+    if (result.ok) {
+      logger.warn('proc', 'process killed by panel', { pid: body.pid, name: body.name });
+    } else {
+      logger.warn('proc', 'kill refused', { pid: body.pid, name: body.name, error: result.error });
+    }
+    return sendJson(res, result.ok ? 200 : 400, result);
   }
 
   if (method === 'GET' && pathname === '/api/state') {

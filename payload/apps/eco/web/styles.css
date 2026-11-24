@@ -1328,3 +1328,126 @@ body.compact .log-body {
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
+/* ============================================================
+ * 页签：看板 / 进程与资源
+ * ============================================================ */
+.tabs {
+  display: flex;
+  gap: 4px;
+  width: fit-content;
+  margin: 14px 0 14px;
+  padding: 4px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.tab {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 16px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.tab:hover { color: var(--text); }
+.tab.on { background: rgba(53, 230, 196, 0.14); color: var(--mint); }
+
+.tab-pane { display: none; }
+.tab-pane.on { display: block; }
+
+/* ============================================================
+ * 系统指标卡
+ * ============================================================ */
+.sys-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.sys-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+}
+.sys-card-wide { display: flex; flex-direction: column; justify-content: center; }
+.sys-label {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.sys-value {
+  font-family: var(--mono);
+  font-size: 28px;
+  line-height: 1.2;
+  margin: 6px 0 8px;
+  color: var(--text);
+}
+.sys-value-sm { font-size: 14px; margin: 4px 0 6px; }
+.sys-bar {
+  height: 6px;
+  border-radius: 99px;
+  background: rgba(124, 156, 210, 0.16);
+  overflow: hidden;
+}
+.sys-bar i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, var(--mint), var(--blue));
+  transition: width 0.4s ease;
+}
+.sys-bar i.bar-warn { background: linear-gradient(90deg, var(--amber), #ff9f43); }
+.sys-bar i.bar-danger { background: linear-gradient(90deg, var(--rose), #ff4d6d); }
+.sys-sub {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+/* ============================================================
+ * 进程表
+ * ============================================================ */
+.proc-list { display: flex; flex-direction: column; }
+.proc-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1.4fr) 110px 70px 76px 92px 92px;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+.proc-row:last-child { border-bottom: 0; }
+.proc-head {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--panel-2);
+}
+.proc-cell { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.proc-name { font-family: var(--mono); color: var(--text); }
+.proc-owner { color: var(--muted); font-size: 12px; }
+.proc-num { font-family: var(--mono); text-align: right; color: var(--muted); }
+.proc-act { text-align: right; }
+.proc-tag {
+  font-size: 11px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  padding: 1px 8px;
+}
+.proc-kill { padding: 3px 10px; font-size: 12px; border-radius: 6px; }
+.proc-kill:hover { color: var(--rose); border-color: var(--rose); }
+
+@media (max-width: 900px) {
+  .sys-kpis { grid-template-columns: 1fr; }
+  .proc-row { grid-template-columns: minmax(90px, 1.2fr) 84px 56px 62px 76px 76px; }
+}

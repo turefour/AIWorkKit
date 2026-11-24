@@ -29,6 +29,12 @@
 
       <div id="hintBar" class="hint-bar" hidden></div>
 
+      <nav class="tabs" id="tabs">
+        <button class="tab on" type="button" data-pane="board">看板</button>
+        <button class="tab" type="button" data-pane="proc">进程与资源</button>
+      </nav>
+
+      <div class="tab-pane on" data-pane-body="board">
       <section class="kpis" id="kpis"></section>
 
       <main class="grid">
@@ -80,6 +86,44 @@
         </header>
         <div id="logs" class="log-body"></div>
       </section>
+      </div><!-- /pane-board -->
+
+      <div class="tab-pane" data-pane-body="proc">
+        <section class="sys-kpis" id="sysKpis">
+          <div class="sys-card">
+            <div class="sys-label">CPU 占用</div>
+            <div class="sys-value" id="cpuVal">—</div>
+            <div class="sys-bar"><i id="cpuBar" style="width:0%"></i></div>
+            <div class="sys-sub" id="cpuSub">首次采样…</div>
+          </div>
+          <div class="sys-card">
+            <div class="sys-label">内存占用</div>
+            <div class="sys-value" id="memVal">—</div>
+            <div class="sys-bar"><i id="memBar" style="width:0%"></i></div>
+            <div class="sys-sub" id="memSub">—</div>
+          </div>
+          <div class="sys-card sys-card-wide">
+            <div class="sys-label">采样状态</div>
+            <div class="sys-value sys-value-sm" id="procMeta">—</div>
+            <div class="sys-sub" id="procNote"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <header class="panel-head">
+            <h2>设备进程与归属</h2>
+            <div class="panel-tools">
+              <span id="procTotal" class="muted">0</span>
+              <select id="procSort" class="select">
+                <option value="cpu">按 CPU 排序</option>
+                <option value="mem">按内存排序</option>
+              </select>
+              <button id="btnProcRefresh" class="ghost" type="button">刷新</button>
+            </div>
+          </header>
+          <div id="procTable" class="proc-list"></div>
+        </section>
+      </div><!-- /pane-proc -->
 
       <footer class="foot">
         <span>

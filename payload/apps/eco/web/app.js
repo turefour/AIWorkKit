@@ -304,4 +304,254 @@ function injectGradient() {
   document.body.appendChild(svg);
 }
 
+/* ============================================================
+ * 页签：看板 / 进程与资源
+ *
+ * 两个面板互不影响：看板继续走原来的 SSE，进程页按需轮询。
+ * 切到进程页才开始拉数据，切走就停 —— 免得后台一直 spawn PowerShell。
+ * ============================================================ */
+
+// 采样一次真实耗时约 3 秒（PowerShell 起进程 + 遍历 280 个进程），
+// 服务端有 2.5 秒缓存，这里 5 秒一轮，既不重叠也不会明显滞后。
+const PROC_POLL_MS = 5000;
+
+const procState = {
+  timer: null,
+  busy: false,
+  sort: 'cpu',
+  rows: []
+};
+
+function switchPane(name) {
+  document.querySelectorAll('.tab').forEach((b) => {
+    b.classList.toggle('on', b.dataset.pane === name);
+  });
+  document.querySelectorAll('.tab-pane').forEach((p) => {
+    p.classList.toggle('on', p.dataset.paneBody === name);
+  });
+
+  if (name === 'proc') {
+    startProcPolling();
+  } else {
+    stopProcPolling();
+  }
+}
+
+function startProcPolling() {
+  if (procState.timer) return;
+  refreshProcPane();
+  procState.timer = setInterval(refreshProcPane, PROC_POLL_MS);
+}
+
+function stopProcPolling() {
+  if (procState.timer) {
+    clearInterval(procState.timer);
+    procState.timer = null;
+  }
+}
+
+function fmtNum(n, digits) {
+  if (n == null || Number.isNaN(n)) return '—';
+  return Number(n).toFixed(digits == null ? 1 : digits);
+}
+
+function setBar(el, percent) {
+  if (!el) return;
+  const p = Math.max(0, Math.min(100, Number(percent) || 0));
+  el.style.width = p + '%';
+  // 高负载变色：60% 起提醒，85% 起告警
+  el.className = p >= 85 ? 'bar-danger' : p >= 60 ? 'bar-warn' : '';
+}
+
+async function refreshProcPane() {
+  if (procState.busy) return;
+  procState.busy = true;
+  try {
+    const [sys, procs] = await Promise.all([
+      fetch('/api/system', { cache: 'no-store' }).then((r) => r.json()).catch(() => null),
+      fetch('/api/procs?limit=40', { cache: 'no-store' }).then((r) => r.json()).catch(() => null)
+    ]);
+
+    if (sys && sys.ok) {
+      const cpu = sys.cpu || {};
+      const mem = sys.memory || {};
+      const cpuEl = $('cpuVal');
+      const memEl = $('memVal');
+      if (cpuEl) cpuEl.textContent = cpu.usagePercent == null ? '采样中' : fmtNum(cpu.usagePercent) + '%';
+      if (memEl) memEl.textContent = fmtNum(mem.usedPercent) + '%';
+      setBar($('cpuBar'), cpu.usagePercent);
+      setBar($('memBar'), mem.usedPercent);
+      const cpuSub = $('cpuSub');
+      if (cpuSub) cpuSub.textContent = (cpu.cores || 0) + ' 核 · 负载 ' + ((cpu.loadavg || []).join(' / ') || '—');
+      const memSub = $('memSub');
+      if (memSub) memSub.textContent = (mem.usedMB || 0) + ' / ' + (mem.totalMB || 0) + ' MB';
+    }
+
+    if (procs && procs.ok) {
+      procState.rows = procs.procs || [];
+      const total = $('procTotal');
+      if (total) total.textContent = procState.rows.length + ' / ' + (procs.total || 0) + ' 个进程';
+      const meta = $('procMeta');
+      if (meta) {
+        meta.textContent =
+          '采样 ' + (procs.tookMs || 0) + ' ms' +
+          (procs.cached ? '（缓存）' : '') +
+          ' · ' + (procs.at || '').slice(11, 19);
+      }
+      const note = $('procNote');
+      if (note) note.textContent = procs.note || '';
+      renderProcTable();
+    } else if (procs) {
+      const note = $('procNote');
+      if (note) note.textContent = '读取失败：' + (procs.error || '未知错误');
+    }
+  } finally {
+    procState.busy = false;
+  }
+}
+
+function renderProcTable() {
+  const box = $('procTable');
+  if (!box) return;
+
+  const rows = procState.rows.slice().sort((a, b) => {
+    if (procState.sort === 'mem') return (b.memMB || 0) - (a.memMB || 0);
+    return (b.cpuPercent || 0) - (a.cpuPercent || 0) || (b.memMB || 0) - (a.memMB || 0);
+  });
+
+  box.innerHTML = '';
+
+  const head = document.createElement('div');
+  head.className = 'proc-row proc-head';
+  ['进程', '归属', 'PID', 'CPU', '内存', ''].forEach((t) => {
+    const c = document.createElement('div');
+    c.className = 'proc-cell';
+    c.textContent = t;
+    head.appendChild(c);
+  });
+  box.appendChild(head);
+
+  if (!rows.length) {
+    const empty = document.createElement('div');
+    empty.className = 'empty';
+    empty.textContent = '暂无数据';
+    box.appendChild(empty);
+    return;
+  }
+
+  rows.forEach((p) => {
+    const row = document.createElement('div');
+    row.className = 'proc-row';
+
+    const nameCell = document.createElement('div');
+    nameCell.className = 'proc-cell proc-name';
+    nameCell.textContent = p.name || '?';
+    if (p.title) nameCell.title = p.title;
+    row.appendChild(nameCell);
+
+    const ownerCell = document.createElement('div');
+    ownerCell.className = 'proc-cell proc-owner';
+    ownerCell.textContent = p.owner || '其他';
+    row.appendChild(ownerCell);
+
+    const pidCell = document.createElement('div');
+    pidCell.className = 'proc-cell proc-num';
+    pidCell.textContent = p.pid;
+    row.appendChild(pidCell);
+
+    const cpuCell = document.createElement('div');
+    cpuCell.className = 'proc-cell proc-num';
+    cpuCell.textContent = p.cpuPercent == null ? '—' : fmtNum(p.cpuPercent) + '%';
+    row.appendChild(cpuCell);
+
+    const memCell = document.createElement('div');
+    memCell.className = 'proc-cell proc-num';
+    memCell.textContent = (p.memMB || 0) + ' MB';
+    row.appendChild(memCell);
+
+    const actCell = document.createElement('div');
+    actCell.className = 'proc-cell proc-act';
+    if (p.protected) {
+      const tag = document.createElement('span');
+      tag.className = 'proc-tag';
+      tag.textContent = p.protectedReason || '受保护';
+      actCell.appendChild(tag);
+    } else {
+      const btn = document.createElement('button');
+      btn.className = 'ghost proc-kill';
+      btn.type = 'button';
+      btn.textContent = '清理';
+      btn.addEventListener('click', () => killProc(p, btn));
+      actCell.appendChild(btn);
+    }
+    row.appendChild(actCell);
+
+    box.appendChild(row);
+  });
+}
+
+async function killProc(p, btn) {
+  const ok = window.confirm(
+    '结束进程？\n\n' +
+      '名称：' + p.name + '\n' +
+      'PID：' + p.pid + '\n' +
+      '归属：' + p.owner + '\n' +
+      '内存：' + p.memMB + ' MB\n\n' +
+      '未保存的数据会丢失。'
+  );
+  if (!ok) return;
+
+  btn.disabled = true;
+  btn.textContent = '处理中…';
+  try {
+    const res = await fetch('/api/procs/kill', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ pid: p.pid, name: p.name })
+    });
+    const j = await res.json();
+    if (!j.ok) {
+      btn.textContent = '失败';
+      const note = $('procNote');
+      if (note) note.textContent = '清理失败：' + (j.error || '未知错误');
+    } else {
+      btn.textContent = '已清理';
+    }
+  } catch (e) {
+    btn.textContent = '失败';
+    const note = $('procNote');
+    if (note) note.textContent = '清理失败：' + e.message;
+  }
+  setTimeout(refreshProcPane, 600);
+}
+
+(function initTabs() {
+  const tabs = $('tabs');
+  if (!tabs) return;
+
+  tabs.addEventListener('click', (ev) => {
+    const btn = ev.target.closest('.tab');
+    if (btn) switchPane(btn.dataset.pane);
+  });
+
+  const sortSel = $('procSort');
+  if (sortSel) {
+    sortSel.addEventListener('change', () => {
+      procState.sort = sortSel.value;
+      renderProcTable();
+    });
+  }
+
+  const refreshBtn = $('btnProcRefresh');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', () => refreshProcPane());
+  }
+
+  // 页面隐藏时停轮询，回来再继续（切页签 / 最小化都适用）
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopProcPolling();
+    else if (document.querySelector('.tab.on')?.dataset.pane === 'proc') startProcPolling();
+  });
+})();
+
 boot();
