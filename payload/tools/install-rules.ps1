@@ -1,4 +1,4 @@
-# ============================================================================
+﻿# ============================================================================
 # install-rules.ps1 - 把同一份规则正文分发到各 AI 编程平台的约定位置
 #
 # 为什么需要它：规则正文（索引库在哪、工具怎么调、收尾怎么提交）是平台无关的，
@@ -26,7 +26,10 @@ param(
   [int]$PortErrvault = 57911,
   # 注意：不能叫 -Host，PowerShell 的 $Host 是只读内置变量，赋值会直接报错退出
   [string]$BindAddress = '127.0.0.1',
-  [switch]$Json
+  [switch]$Json,
+  # 只报告将写哪些平台/文件，不落盘。
+  # 没有这个开关时，`-Platforms all` 会真的写进用户主目录（实测踩过一次）。
+  [switch]$Dry
 )
 
 $ErrorActionPreference = 'Stop'
@@ -41,15 +44,59 @@ $BEGIN_MARK = '<!-- AIWorkKit:BEGIN id=deploy-target -->'
 $END_MARK = '<!-- AIWorkKit:END -->'
 
 # ---------------------------------------------------------------- 平台表
-# probe 用来判断「本机装没装这个平台」，避免给没装的东西建目录。
-$PLATFORM_TABLE = [ordered]@{
-  aiworkkit = @{ label = 'AIWorkKit'; dir = "$HOME_DIR\.codebuddy\rules";  file = 'deploy-target.mdc'; mode = 'file';  probe = "$HOME_DIR\.codebuddy" }
-  cursor    = @{ label = 'Cursor';    dir = "$HOME_DIR\.cursor\rules";    file = 'deploy-target.mdc'; mode = 'file';  probe = "$HOME_DIR\.cursor" }
-  claude    = @{ label = 'Claude Code'; dir = "$HOME_DIR\.claude";        file = 'CLAUDE.md';         mode = 'block'; probe = "$HOME_DIR\.claude" }
-  codex     = @{ label = 'Codex';     dir = "$HOME_DIR\.codex";           file = 'AGENTS.md';         mode = 'block'; probe = "$HOME_DIR\.codex" }
-  windsurf  = @{ label = 'Windsurf';  dir = "$HOME_DIR\.windsurf\rules";  file = 'deploy-target.md';  mode = 'file';  probe = "$HOME_DIR\.windsurf" }
-  cline     = @{ label = 'Cline';     dir = "$HOME_DIR";                  file = '.clinerules';       mode = 'block'; probe = "$HOME_DIR\.vscode\extensions" }
-  generic   = @{ label = '通用（部署目录）'; dir = $Target;               file = 'AGENTS.md';         mode = 'block'; probe = $Target }
+# 从 config/platforms.json 读取，脚本里不再硬编码平台清单。
+# 新增平台只改那个 JSON —— 以前这里和 platforms.json 各存一份，改一处漏一处。
+#
+# 目录写法支持三种占位：
+#   ~             → 用户主目录
+#   {target}      → 本次部署目录（-Target）
+#   %LOCALAPPDATA% → 环境变量
+function Expand-Dir {
+  param([string]$Value)
+  if (-not $Value) { return '' }
+  $s = $Value.Replace('{target}', $Target)
+  if ($s.StartsWith('~')) {
+    $rest = $s.Substring(1).TrimStart('\', '/')
+    $s = if ($rest) { Join-Path $env:USERPROFILE $rest } else { $env:USERPROFILE }
+  }
+  $s = [regex]::Replace($s, '%([^%]+)%', {
+      param($m)
+      $name = $m.Groups[1].Value
+      $v = [System.Environment]::GetEnvironmentVariable($name)
+      if ($v) { $v } else { $m.Value }
+    })
+  return [System.IO.Path]::GetFullPath($s)
+}
+
+$PlatformFile = Join-Path $PackageRoot 'config\platforms.json'
+if (-not (Test-Path $PlatformFile)) {
+  if ($Json) {
+    [pscustomobject]@{ ok = $false; error = 'config\platforms.json 缺失'; written = @() } | ConvertTo-Json -Compress
+  } else {
+    Write-Host ('  [fail] 平台配置缺失：' + $PlatformFile) -ForegroundColor Red
+  }
+  exit 2
+}
+
+$platformRaw = Get-Content $PlatformFile -Raw -Encoding UTF8 | ConvertFrom-Json
+$PLATFORM_TABLE = [ordered]@{}
+foreach ($prop in $platformRaw.platforms.PSObject.Properties) {
+  $p = $prop.Value
+  $mode = 'file'
+  if ($p.installMode -eq 'block') { $mode = 'block' }
+  $dirPath = (Expand-Dir $p.rulesDir)
+  $probePath = (Expand-Dir $p.probe)
+  $PLATFORM_TABLE[$prop.Name] = @{
+    label = [string]$p.label
+    dir   = $dirPath
+    file  = [string]$p.ruleFile
+    mode  = $mode
+    probe = $probePath
+  }
+}
+if (-not $PLATFORM_TABLE.Contains('generic')) {
+  Write-Host '  [fail] platforms.json 缺少 generic 条目（部署目录兜底）' -ForegroundColor Red
+  exit 2
 }
 
 # ---------------------------------------------------------------- 正文
@@ -106,16 +153,24 @@ $utf8 = New-Object System.Text.UTF8Encoding $false
 
 function Write-FileMode {
   param([string]$Key, [hashtable]$Spec)
-  if (-not (Test-Path $Spec.dir)) { New-Item -ItemType Directory -Force -Path $Spec.dir | Out-Null }
   $path = Join-Path $Spec.dir $Spec.file
+  if ($Dry) {
+    $script:written.Add([pscustomobject]@{ platform = $Key; label = $Spec.label; path = $path; mode = 'file(dry)' })
+    return
+  }
+  if (-not (Test-Path $Spec.dir)) { New-Item -ItemType Directory -Force -Path $Spec.dir | Out-Null }
   [System.IO.File]::WriteAllText($path, $raw, $utf8)
   $script:written.Add([pscustomobject]@{ platform = $Key; label = $Spec.label; path = $path; mode = 'file' })
 }
 
 function Write-BlockMode {
   param([string]$Key, [hashtable]$Spec)
-  if (-not (Test-Path $Spec.dir)) { New-Item -ItemType Directory -Force -Path $Spec.dir | Out-Null }
   $path = Join-Path $Spec.dir $Spec.file
+  if ($Dry) {
+    $script:written.Add([pscustomobject]@{ platform = $Key; label = $Spec.label; path = $path; mode = 'block(dry)' })
+    return
+  }
+  if (-not (Test-Path $Spec.dir)) { New-Item -ItemType Directory -Force -Path $Spec.dir | Out-Null }
 
   $existing = ''
   if (Test-Path $path) {

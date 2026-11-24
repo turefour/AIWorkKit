@@ -1,4 +1,4 @@
-# ============================================================================
+﻿# ============================================================================
 # AIWorkKit Idle Tuner - core engine
 # One implementation shared by cli/tuner.js (plugin commands / hooks) and the
 # system-tray app (tray/tray.ps1).

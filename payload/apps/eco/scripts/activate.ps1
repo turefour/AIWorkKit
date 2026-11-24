@@ -1,4 +1,4 @@
-# AIWorkKit Eco - activate production mode.
+﻿# AIWorkKit Eco - activate production mode.
 # Restarts the monitor daemon, prints status and opens the dashboard window.
 # Usage: powershell -ExecutionPolicy Bypass -File scripts\activate.ps1
 $ErrorActionPreference = 'SilentlyContinue'

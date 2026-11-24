@@ -1,4 +1,4 @@
-# ============================================================================
+﻿# ============================================================================
 # AIWorkKit Idle Tuner - command line entry point
 # Every action returns a plain object; with -Json the object is printed as
 # pure JSON on stdout (no banners), which is what cli/tuner.js consumes.

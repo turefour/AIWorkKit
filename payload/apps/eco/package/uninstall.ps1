@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   AIWorkKit Eco 一键卸载（移除插件注册与 rule，保留可回滚备份）。
 

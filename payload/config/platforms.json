@@ -1,52 +1,117 @@
 {
-  "$comment": "AI 编程平台接入档案。安装规则、扫描插件、接收事件都按这里的目录走，新增平台只需加一条。",
-  "version": 1,
-  "default": "generic",
+  "$comment": "平台接入档案 —— 规则分发、插件扫描、事件接入的唯一来源。新增平台只改这里，不改脚本。",
+  "version": 2,
+  "default": "aiworkkit",
   "platforms": {
-    "generic": {
-      "label": "通用（HTTP 上报）",
+    "aiworkkit": {
+      "label": "AIWorkKit",
       "configDir": "~/.aiworkkit",
+      "probe": "~/.aiworkkit",
+      "installMode": "file",
       "rulesDir": "~/.aiworkkit/rules",
+      "ruleFile": "deploy-target.mdc",
       "settingsFile": "~/.aiworkkit/config.json",
       "pluginsDir": "~/.aiworkkit/plugins",
       "eventSource": "http",
-      "note": "任何平台都可以用 HTTP 直接上报，无需插件。"
+      "note": "默认位置；任何平台都可以直接向 /api/events 上报。"
     },
     "codebuddy": {
       "label": "CodeBuddy",
       "configDir": "~/.codebuddy",
+      "probe": "~/.codebuddy",
+      "installMode": "file",
       "rulesDir": "~/.codebuddy/rules",
+      "ruleFile": "deploy-target.mdc",
       "settingsFile": "~/.codebuddy/settings.json",
       "pluginsDir": "~/.codebuddy/plugins",
       "eventSource": "hook",
-      "note": "通过 hooks/pulse-hook 等价机制注入；规则文件为 deploy-target.mdc。"
+      "note": "通过 hook 注入事件；插件目录沿用 .codebuddy-plugin 清单。"
     },
     "codex": {
       "label": "Codex CLI",
       "configDir": "~/.codex",
-      "rulesDir": "~/.codex/rules",
+      "probe": "~/.codex",
+      "installMode": "block",
+      "rulesDir": "~/.codex",
+      "ruleFile": "AGENTS.md",
       "settingsFile": "~/.codex/config.json",
       "pluginsDir": "~/.codex/plugins",
       "eventSource": "wrapper",
-      "note": "用 adapters/codex.mjs 包一层命令，捕获 stdout 事件并转发。"
+      "note": "规则追加到 AGENTS.md 受管区块；用 adapters/codex.mjs 包一层命令上报事件。"
     },
     "deepseek": {
       "label": "DeepSeek Harness",
       "configDir": "~/.deepseek",
+      "probe": "~/.deepseek",
+      "installMode": "file",
       "rulesDir": "~/.deepseek/rules",
+      "ruleFile": "deploy-target.mdc",
       "settingsFile": "~/.deepseek/settings.json",
       "pluginsDir": "~/.deepseek/plugins",
       "eventSource": "stdin",
-      "note": "用 adapters/deepseek.mjs 从 stdin 读取事件流。"
+      "note": "adapters/deepseek.mjs 从 stdin 读 NDJSON 事件流。"
     },
     "vibe": {
       "label": "Vibe Coding",
       "configDir": "~/.vibe",
+      "probe": "~/.vibe",
+      "installMode": "file",
       "rulesDir": "~/.vibe/rules",
+      "ruleFile": "deploy-target.mdc",
       "settingsFile": "~/.vibe/settings.json",
       "pluginsDir": "~/.vibe/plugins",
       "eventSource": "http",
-      "note": "直接向 /api/events 发标准事件即可。"
+      "note": "直接 POST 标准事件即可，无需插件。"
+    },
+    "cursor": {
+      "label": "Cursor",
+      "configDir": "~/.cursor",
+      "probe": "~/.cursor",
+      "installMode": "file",
+      "rulesDir": "~/.cursor/rules",
+      "ruleFile": "deploy-target.mdc",
+      "eventSource": "http",
+      "note": "规则放在 .cursor/rules。"
+    },
+    "claude": {
+      "label": "Claude Code",
+      "configDir": "~/.claude",
+      "probe": "~/.claude",
+      "installMode": "block",
+      "rulesDir": "~/.claude",
+      "ruleFile": "CLAUDE.md",
+      "eventSource": "http",
+      "note": "规则追加到 CLAUDE.md 受管区块。"
+    },
+    "windsurf": {
+      "label": "Windsurf",
+      "configDir": "~/.windsurf",
+      "probe": "~/.windsurf",
+      "installMode": "file",
+      "rulesDir": "~/.windsurf/rules",
+      "ruleFile": "deploy-target.md",
+      "eventSource": "http",
+      "note": "规则放在 .windsurf/rules，扩展名为 .md。"
+    },
+    "cline": {
+      "label": "Cline",
+      "configDir": "~",
+      "probe": "~/.vscode/extensions",
+      "installMode": "block",
+      "rulesDir": "~",
+      "ruleFile": ".clinerules",
+      "eventSource": "http",
+      "note": "规则追加到用户目录的 .clinerules。"
+    },
+    "generic": {
+      "label": "通用（部署目录）",
+      "configDir": "{target}",
+      "probe": "{target}",
+      "installMode": "block",
+      "rulesDir": "{target}",
+      "ruleFile": "AGENTS.md",
+      "eventSource": "http",
+      "note": "部署目录下的 AGENTS.md；auto 模式下总会写一份，保证装完有指引。"
     }
   }
 }

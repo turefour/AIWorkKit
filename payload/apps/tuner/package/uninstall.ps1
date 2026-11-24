@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   AIWorkKit 空闲降温器 - 卸载。
 

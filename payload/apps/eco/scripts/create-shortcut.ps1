@@ -1,4 +1,4 @@
-# AIWorkKit Eco - create a desktop shortcut for the standalone window.
+﻿# AIWorkKit Eco - create a desktop shortcut for the standalone window.
 # Run once; the shortcut then behaves like a normal desktop app.
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot

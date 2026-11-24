@@ -46,10 +46,28 @@ function countFiles(dir, depth) {
   return n;
 }
 
+/**
+ * 插件清单目录：通用名优先，历史目录名兜底。
+ *
+ * 旧版只认单一平台的清单目录，换个平台就不认插件。
+ * 新约定是 `.aiplugin/plugin.json`；旧包不动，读到就用。
+ */
+const MANIFEST_DIRS = ['.aiplugin', '.codebuddy-plugin'];
+
+function findManifest(root) {
+  for (const dir of MANIFEST_DIRS) {
+    const file = path.join(root, dir, 'plugin.json');
+    const info = readJson(file);
+    if (info && typeof info === 'object') return { file, info };
+  }
+  return null;
+}
+
 function describe(root, meta, ctx) {
   const context = ctx || {};
-  const pluginJson = path.join(root, '.codebuddy-plugin', 'plugin.json');
-  const info = meta || readJson(pluginJson) || {};
+  const manifest = findManifest(root);
+  const pluginJson = manifest ? manifest.file : path.join(root, MANIFEST_DIRS[0], 'plugin.json');
+  const info = meta || (manifest && manifest.info) || {};
   const hooksFile = path.join(root, 'hooks', 'hooks.json');
   const hooks = readJson(hooksFile);
   const hookEvents = hooks && hooks.hooks ? Object.keys(hooks.hooks) : [];
@@ -189,7 +207,7 @@ function collect(cwd) {
     // 本地直接安装（非市场）
     for (const dir of listDirs(pluginsRoot)) {
       if (path.basename(dir) === 'marketplaces') continue;
-      if (safeStat(path.join(dir, '.codebuddy-plugin', 'plugin.json'))) {
+      if (findManifest(dir)) {
         const entry = describe(dir, null, { cwd });
         found.set(entry.root.toLowerCase(), entry);
       }
@@ -205,7 +223,7 @@ function collect(cwd) {
 
     for (const base of bases) {
       for (const dir of listDirs(base)) {
-        if (safeStat(path.join(dir, '.codebuddy-plugin', 'plugin.json'))) {
+        if (findManifest(dir)) {
           const entry = describe(dir, null, { cwd });
           found.set(entry.root.toLowerCase(), entry);
         }

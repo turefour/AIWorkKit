@@ -1,4 +1,4 @@
-# AIWorkKit Eco - build a portable package on the Desktop.
+﻿# AIWorkKit Eco - build a portable package on the Desktop.
 # Output: Desktop\AIWorkKit-Eco-portable\ (ready to run) + .zip (ready to copy).
 # Runtime state (.eco, logs) and editor backups are excluded on purpose.
 $ErrorActionPreference = 'Stop'

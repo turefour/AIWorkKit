@@ -1,4 +1,4 @@
-# ============================================================================
+﻿# ============================================================================
 # AIWorkKit Idle Tuner - taskbar tray app
 #
 # Lives outside AIWorkKit on purpose: when background child processes are

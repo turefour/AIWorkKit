@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   AIWorkKit Eco 一键安装（注册插件市场、写入 rule、启动守护进程）。
 
