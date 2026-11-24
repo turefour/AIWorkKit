@@ -1,4 +1,4 @@
-AIWorkKit 工作套件 1.0.0
+AIWorkKit · 通用AI平台工作套件 2.0.0
 =======================
 
 解压后双击 installer.exe 安装。详细说明见 payload\docs\使用说明.txt。
