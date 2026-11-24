@@ -1,0 +1,38 @@
+{
+  "description": "AIWorkKit Idle Tuner - idle detection hooks. Fire-and-forget, always exit 0, never write stdout. Auto mode only trims memory and lowers priority; it never suspends processes.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${AIWORKKIT_PLUGIN_ROOT}/hooks/tuner-hook.js\" SessionStart",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${AIWORKKIT_PLUGIN_ROOT}/hooks/tuner-hook.js\" UserPromptSubmit",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${AIWORKKIT_PLUGIN_ROOT}/hooks/tuner-hook.js\" Stop",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

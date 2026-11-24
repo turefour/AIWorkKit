@@ -1,0 +1,60 @@
+{
+  "description": "AIWorkKit Eco - runtime telemetry hooks (agent turn + tool lifecycle). Every hook is fire-and-forget and always exits 0.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${AIWORKKIT_PLUGIN_ROOT}/hooks/eco-hook.js\" SessionStart",
+            "timeout": 8
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${AIWORKKIT_PLUGIN_ROOT}/hooks/eco-hook.js\" UserPromptSubmit",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${AIWORKKIT_PLUGIN_ROOT}/hooks/eco-hook.js\" PreToolUse",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${AIWORKKIT_PLUGIN_ROOT}/hooks/eco-hook.js\" PostToolUse",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${AIWORKKIT_PLUGIN_ROOT}/hooks/eco-hook.js\" Stop",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

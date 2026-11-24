@@ -1,0 +1,488 @@
+/* AIWorkKit Eco - card internals and expanded detail.
+   Loaded after styles.css. Kept separate so the incremental renderer can rely on
+   a stable structure: .job > .job-row > .job-main, plus .job-expanded[hidden]. */
+
+.job {
+  display: block;
+  padding: 0;
+}
+
+.job-row {
+  display: flex;
+  gap: 12px;
+  padding: 11px 12px;
+  border-radius: 11px;
+  cursor: pointer;
+}
+
+/* Hint band shown when task capture (hooks) is not connected yet. */
+.hint-bar {
+  padding: 7px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 195, 87, 0.34);
+  background: rgba(255, 195, 87, 0.08);
+  color: #ffd58a;
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.hint-bar[hidden] {
+  display: none;
+}
+
+/* Finished flows are auto-cleared by the daemon; fade before detaching. */
+.job.is-leaving {
+  animation: fade-out 0.22s ease forwards;
+}
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.job-row:hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.job.expanded {
+  border-color: rgba(106, 168, 255, 0.34);
+  background: rgba(26, 35, 52, 0.78);
+}
+
+.job-caret {
+  margin-left: 6px;
+  color: var(--muted);
+  font-size: 10px;
+  flex: none;
+}
+
+.job-expanded {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 12px 12px 78px;
+  border-top: 1px dashed var(--line);
+}
+
+.job-expanded[hidden] {
+  display: none;
+}
+
+.kv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  gap: 5px 14px;
+}
+
+.kv {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+}
+
+.kv span {
+  color: var(--muted);
+}
+
+.kv b {
+  color: #c3d4ec;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.steps-head {
+  margin-bottom: 2px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 5px;
+  border-radius: 5px;
+  font-size: 11.5px;
+}
+
+.step-icon {
+  width: 14px;
+  text-align: center;
+  font-family: var(--mono);
+}
+
+.step-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.step-state {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--muted);
+  flex: none;
+}
+
+.step.completed .step-icon {
+  color: var(--mint);
+}
+
+.step.completed .step-text {
+  color: #8fa3bd;
+  text-decoration: line-through;
+  text-decoration-color: rgba(143, 163, 189, 0.5);
+}
+
+.step.in_progress {
+  background: rgba(106, 168, 255, 0.09);
+}
+
+.step.in_progress .step-icon,
+.step.in_progress .step-state {
+  color: var(--blue);
+}
+
+.step.failed .step-icon,
+.step.failed .step-state {
+  color: var(--rose);
+}
+
+.step.pending .step-icon {
+  color: #5d6f88;
+}
+
+.job-log {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.job-log-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: #9db0cb;
+}
+
+.job-log-head .muted {
+  margin-left: auto;
+}
+
+.job-log-body {
+  margin: 0;
+  max-height: 210px;
+  overflow: auto;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: rgba(6, 10, 16, 0.78);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  line-height: 1.55;
+  color: #a9bdd8;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* Panel wrappers must not create a box: the action panel joins the parent grid
+   (process row) or the wrapping flex row (plugin row) directly. */
+.proc-panel,
+.plugin-panel {
+  display: contents;
+}
+
+button.mini {
+  font: inherit;
+  font-size: 9.5px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+button.mini:hover {
+  color: var(--text);
+  border-color: var(--line-strong);
+}
+
+.job-code {
+  margin-left: 2px;
+  opacity: 0.65;
+}
+
+.job-row:hover .job-code {
+  opacity: 1;
+}
+
+/* ---------------- detail window ---------------- */
+
+.modal-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(4, 7, 12, 0.74);
+  backdrop-filter: blur(3px);
+}
+
+.modal-mask[hidden] {
+  display: none;
+}
+
+.modal {
+  display: flex;
+  flex-direction: column;
+  width: min(1100px, 96vw);
+  height: min(84vh, 880px);
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid var(--line-strong);
+  background: linear-gradient(180deg, #10161f, #0a0f17);
+  box-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.92);
+  animation: rise 0.18s ease both;
+}
+
+.m-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.m-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.m-title b {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.m-head-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+
+.m-code {
+  flex: 1 1 58%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid var(--line);
+}
+
+.m-code-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 14px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: #9db0cb;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.m-code-head span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.m-pre {
+  flex: 1;
+  margin: 0;
+  padding: 8px 0;
+  overflow: auto;
+  background: rgba(4, 7, 12, 0.55);
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.6;
+  color: #b9c8dc;
+}
+
+.m-pre-empty {
+  padding: 16px;
+  color: var(--muted);
+}
+
+.m-line {
+  display: flex;
+  gap: 10px;
+  padding: 0 12px;
+  white-space: pre;
+}
+
+.m-line:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.m-ln {
+  flex: none;
+  width: 46px;
+  text-align: right;
+  color: #4e6076;
+  user-select: none;
+}
+
+.m-src {
+  flex: 1;
+}
+
+.m-info {
+  flex: 1 1 42%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 14px 14px;
+  overflow: auto;
+}
+
+.m-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.m-bar {
+  height: 7px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+
+.m-bar > i {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--mint), var(--blue));
+  transition: width 0.35s ease;
+}
+
+.m-bar.indeterminate > i {
+  width: 34% !important;
+  background: linear-gradient(90deg, transparent, var(--blue), transparent);
+  animation: sweep 1.6s ease-in-out infinite;
+}
+
+.m-progress-meta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
+.m-progress-meta b {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.m-command {
+  display: flex;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--muted);
+  overflow: hidden;
+}
+
+.m-command code {
+  color: #9db0cb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.m-log-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.m-log-head {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: #9db0cb;
+}
+
+.m-log {
+  margin: 0;
+  max-height: 190px;
+  overflow: auto;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: rgba(6, 10, 16, 0.8);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  line-height: 1.55;
+  color: #a9bdd8;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* ---- plugin enable / disable state ---- */
+
+.plugin.disabled {
+  opacity: 0.55;
+}
+
+.plugin.disabled .plugin-actions {
+  opacity: 1;
+}
+
+.plugin.disabled .plugin-dot {
+  background: #3a4759;
+}
+
+.plugin-toggle.on {
+  color: var(--mint);
+  border-color: rgba(53, 230, 196, 0.4);
+}
+
+.flag-off {
+  color: #8c9cb6;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line);
+}
+
+.plugin-toggle {
+  flex: none;
+}

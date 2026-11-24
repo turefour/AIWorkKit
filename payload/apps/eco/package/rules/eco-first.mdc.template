@@ -1,0 +1,90 @@
+---
+description: 启动 AIWorkKit 后自动拉起 AIWorkKit Eco 运行时监控（SessionStart hook），任务开始时再幂等确认一次
+globs:
+alwaysApply: true
+---
+
+# AIWorkKit Eco 启动规则
+
+## 第 0 步（自动，无需动作）：启动 AIWorkKit 即启动监控
+
+插件的 `SessionStart` hook 会在每次 AIWorkKit 会话启动时执行 `hooks/eco-hook.js SessionStart`：
+
+- 守护进程已在运行 → 事件直接入库，看板顶部「Hook 采集」为绿
+- 守护进程未运行 → hook 自动以 `detached` 方式拉起 `cli/eco.js server --daemon`，
+  短暂等待后重新投递本次事件，然后以 `exit 0` 结束（不阻塞、不输出、不返回决策）
+
+因此**正常情况下不需要执行任何命令**，打开 AIWorkKit 后监控即自动就绪。
+
+## 第 1 步（兜底）：任务开始时幂等确认一次
+
+hook 未加载（例如本次会话是安装插件之前开的、或窗口未重载）时，`SessionStart` 不会触发。
+收到用户需求的**第一个动作**执行一次幂等启动（已运行会自动跳过，开销 < 1s）：
+
+```powershell
+node "{{PLUGIN_ROOT}}\cli\eco.js" server --daemon
+```
+
+判定标准：
+
+- 输出 `daemon started ...` 或 `already running ...` 都视为成功
+- **失败不得阻塞主任务**：记录一行说明后继续执行用户需求，不要卡在启动环节反复重试
+
+## 第 2 步：确认数据源（一条命令）
+
+```powershell
+node "{{PLUGIN_ROOT}}\cli\eco.js" status
+```
+
+期望看到 `jobs:` / `scripts:` / `plugins:` 三行。若 `daemon not running`，说明上一步失败，直接继续主任务并在回复里提示一次即可。
+
+## 第 3 步：把当前任务的步骤清单挂到看板
+
+拿到需求后，先把任务拆成 2~6 个可验证步骤并上报一次（hook 尚未加载时，这是让看板显示任务的唯一方式）：
+
+```powershell
+node "{{PLUGIN_ROOT}}\cli\eco.js" task --id task-<yyyyMMddHHmm> --label "<任务名>" --steps "步骤1|步骤2|步骤3" --current 0
+```
+
+每完成一步，用**同一个 `--id`** 把 `--current` 加 1；全部完成后收尾：
+
+```powershell
+node "{{PLUGIN_ROOT}}\cli\eco.js" task --id task-<yyyyMMddHHmm> --done
+```
+
+- 步骤用 `|` 分隔，最多 6 条，保持短语化（每步可验证）
+- 任务名与步骤用中文，便于在窗口中一眼识别
+- hook 已生效（看板「Hook 采集」为绿）时，插件会自动采集 agent 的任务清单，本步可只保留初始上报
+
+## 需要窗口时
+
+用户要求"看进度 / 打开窗口 / 可视化"时再执行，避免每次都弹窗：
+
+```powershell
+node "{{PLUGIN_ROOT}}\cli\eco.js" open
+```
+
+打开的是**独立窗口**（Chromium `--app` 模式，无地址栏/标签栏）；重复执行只会把已有窗口前置，`--browser` 可回退到默认浏览器。
+
+## 长任务必须挂到监控上
+
+存在可量化流程（构建、批处理、迁移、抓取、逐文件处理）时，用包装方式执行，让看板自动算出百分比与 ETA：
+
+```powershell
+node "{{PLUGIN_ROOT}}\cli\eco.js" run --label "<中文任务名>" -- <命令>
+```
+
+无法包装时，在关键步骤后上报一次：
+
+```powershell
+node "{{PLUGIN_ROOT}}\cli\eco.js" report --id <稳定任务id> --label "<名称>" --current <已完成> --total <总量> --unit <单位>
+node "{{PLUGIN_ROOT}}\cli\eco.js" done --id <稳定任务id>          # 或 --failed
+```
+
+## 约束
+
+- 端口默认 `47821`，如需更换用环境变量 `AIWORKKIT_ECO_PORT`，命令与看板必须一致
+- 目录不存在（项目被移动/删除）时，跳过启动并说明，禁止把主任务拖住
+- 只读型/极短任务同样执行第 1 步兜底，保证长任务到来时数据连续
+- 不要为了让看板好看而编造进度数字；无总量就留空，让界面显示不确定进度条
+- `SessionStart` hook 属于插件 hooks 配置，**新增/修改后需重载窗口**才会重新加载

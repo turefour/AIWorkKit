@@ -1,0 +1,4 @@
+.preview.png
+shot-*.png
+node_modules/
+*.log

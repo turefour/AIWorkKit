@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AIWorkKit Eco · 运行时监控</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/layout.css" />
+    <link rel="icon" href="/favicon.svg" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <div class="brand">
+          <span class="eco-dot" aria-hidden="true"></span>
+          <div class="brand-text">
+            <h1>AIWorkKit <span>Eco</span></h1>
+            <p>运行时监控 · 插件 / 脚本 / 可量化流程进度</p>
+          </div>
+        </div>
+        <div class="top-meta">
+          <span id="sources" class="source-row"></span>
+          <span id="conn" class="chip chip-warn">连接中…</span>
+          <span id="serverInfo" class="chip">—</span>
+          <button id="btnCompact" class="ghost" type="button">紧凑视图</button>
+          <button id="btnClear" class="ghost" type="button">清理已完成</button>
+        </div>
+      </header>
+
+      <div id="hintBar" class="hint-bar" hidden></div>
+
+      <section class="kpis" id="kpis"></section>
+
+      <main class="grid">
+        <section class="panel panel-jobs">
+          <header class="panel-head">
+            <h2>活动流程</h2>
+            <div class="panel-tools">
+              <span id="jobCount" class="muted">0</span>
+            </div>
+          </header>
+          <div id="jobs" class="jobs"></div>
+          <div id="jobsEmpty" class="empty">
+            暂无活动任务。尝试：<code>node cli/eco.js report --id build --total 10</code>
+          </div>
+        </section>
+
+        <aside class="side">
+          <section class="panel">
+            <header class="panel-head">
+              <h2>运行中的脚本</h2>
+              <span id="procCount" class="muted">0</span>
+            </header>
+            <div id="guard" class="guard" hidden></div>
+            <div id="procs" class="procs"></div>
+          </section>
+
+          <section class="panel">
+            <header class="panel-head">
+              <h2>已加载插件</h2>
+              <span id="pluginCount" class="muted">0</span>
+            </header>
+            <div id="plugins" class="plugins"></div>
+          </section>
+        </aside>
+      </main>
+
+      <section class="panel console">
+        <header class="panel-head">
+          <h2>实时事件流</h2>
+          <div class="console-tools">
+            <span id="logSeq" class="muted">seq 0</span>
+            <select id="logLevel" class="select">
+              <option value="all">全部级别</option>
+              <option value="error">仅错误</option>
+              <option value="warn">警告 + 错误</option>
+            </select>
+            <label class="check"><input type="checkbox" id="autoScroll" checked /> 自动滚动</label>
+          </div>
+        </header>
+        <div id="logs" class="log-body"></div>
+      </section>
+
+      <footer class="foot">
+        <span>
+          上报：<code>POST /api/progress</code> · 标准输出标记 <code>@eco 35/100</code> · 包装运行
+          <code>eco run -- &lt;cmd&gt;</code>
+        </span>
+        <span id="footState" class="muted"></span>
+      </footer>
+    </div>
+    <script src="/core.js"></script>
+    <script src="/render.js"></script>
+    <script src="/detail.js"></script>
+    <script src="/app.js"></script>
+  </body>
+</html>

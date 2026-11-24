@@ -1,0 +1,256 @@
+{
+  "$comment": "接口目录：设置页按这份清单渲染卡片，「查看格式」直接展示 request/response。改接口时只改这里。",
+  "version": 1,
+  "groups": [
+    {
+      "id": "eco",
+      "title": "降耗模块 · Eco",
+      "port": "eco",
+      "desc": "接收各 AI 平台上报的任务/工具事件，统计进度与资源占用，并按阈值自动降耗。",
+      "endpoints": [
+        {
+          "id": "eco.events",
+          "name": "上报事件（写入）",
+          "method": "POST",
+          "path": "/api/events",
+          "desc": "所有平台统一走这个入口。配套 adapters/ 下有 Codex / DeepSeek 的现成转换脚本。",
+          "request": {
+            "platform": "codex",
+            "event": "tool.end",
+            "sessionId": "sess-7f3a",
+            "job": {
+              "id": "run-20261124-001",
+              "kind": "build",
+              "label": "npm run build",
+              "status": "running",
+              "current": 3,
+              "total": 8,
+              "unit": "step"
+            },
+            "payload": {
+              "tool": "Bash",
+              "command": "npm run build",
+              "durationMs": 4210,
+              "exitCode": 0
+            }
+          },
+          "response": { "ok": true, "accepted": true },
+          "curl": "curl -X POST http://127.0.0.1:57821/api/events -H \"content-type: application/json\" -d @event.json"
+        },
+        {
+          "id": "eco.state",
+          "name": "读取状态（输出）",
+          "method": "GET",
+          "path": "/api/state",
+          "desc": "完整快照：任务、进程、插件、资源占用。看板每秒走 SSE，这里用于一次性拉取。",
+          "request": null,
+          "response": {
+            "now": 1795000000000,
+            "jobs": [
+              {
+                "id": "run-20261124-001",
+                "status": "running",
+                "percent": 37.5,
+                "elapsedMs": 4210,
+                "etaMs": 7020
+              }
+            ],
+            "summary": {
+              "total": 1,
+              "running": 1,
+              "cpuPercent": 12.4,
+              "memMB": 486
+            }
+          },
+          "curl": "curl http://127.0.0.1:57821/api/state"
+        },
+        {
+          "id": "eco.config.read",
+          "name": "读取配置（输出）",
+          "method": "GET",
+          "path": "/api/config",
+          "desc": "降耗模块的当前配置。设置页载入时调用。",
+          "request": null,
+          "response": {
+            "ok": true,
+            "config": {
+              "scanIntervalMs": 6000,
+              "cpuThreshold": 60,
+              "memThresholdMB": 2048,
+              "autoTrim": true,
+              "trimCooldownMs": 120000,
+              "platforms": ["generic", "codebuddy", "codex", "deepseek", "vibe"]
+            }
+          },
+          "curl": "curl http://127.0.0.1:57821/api/config"
+        },
+        {
+          "id": "eco.config.write",
+          "name": "保存配置（写入）",
+          "method": "POST",
+          "path": "/api/config",
+          "desc": "只提交要改的字段，未提交的保持原值。落盘到 state/config.json，重启后仍生效。",
+          "request": {
+            "scanIntervalMs": 8000,
+            "cpuThreshold": 70,
+            "memThresholdMB": 3072,
+            "autoTrim": false
+          },
+          "response": {
+            "ok": true,
+            "config": {
+              "scanIntervalMs": 8000,
+              "cpuThreshold": 70,
+              "memThresholdMB": 3072,
+              "autoTrim": false,
+              "trimCooldownMs": 120000
+            }
+          },
+          "curl": "curl -X POST http://127.0.0.1:57821/api/config -H \"content-type: application/json\" -d \"{\\\"cpuThreshold\\\":70}\""
+        }
+      ]
+    },
+    {
+      "id": "errvault",
+      "title": "报错库 · errvault",
+      "port": "errvault",
+      "desc": "把报错 / 卡死 / 被拦截事件连同根因与做法留档，下次遇到先检索再动手。",
+      "endpoints": [
+        {
+          "id": "errvault.write",
+          "name": "写入一条记录",
+          "method": "POST",
+          "path": "/api/entry",
+          "desc": "同一个 symptom 重复提交不会新建，而是把出现次数加一。只传想改的字段即可。",
+          "request": {
+            "kind": "blocked",
+            "symptom": "The process cannot access the file because it is being used by another process",
+            "scope": "machine",
+            "repro": "always",
+            "severity": "major",
+            "tool": "Bash / Remove-Item",
+            "goal": "删除构建产物目录",
+            "cause": "dll 被 explorer 或安全软件加载",
+            "fix": "先 takeown + icacls 授权，逐文件删除并跳过锁定项；仍失败的留到重启后清",
+            "tags": ["filelock", "windows"],
+            "resolved": true
+          },
+          "response": {
+            "ok": true,
+            "id": "ERR-20261124-091533-a1b2c3",
+            "isNew": true,
+            "isRecur": false,
+            "entry": {
+              "id": "ERR-20261124-091533-a1b2c3",
+              "kind": "blocked",
+              "scope": "machine",
+              "repro": "always",
+              "severity": "major",
+              "count": 1,
+              "firstSeen": "2026-11-24T09:15:33+08:00",
+              "lastSeen": "2026-11-24T09:15:33+08:00"
+            }
+          },
+          "curl": "curl -X POST http://127.0.0.1:57911/api/entry -H \"content-type: application/json\" -d @entry.json"
+        },
+        {
+          "id": "errvault.search",
+          "name": "检索（输出）",
+          "method": "GET",
+          "path": "/api/search",
+          "desc": "中文 2-gram + 英文分词，按字段权重打分。支持 q / kind / scope / repro / severity / tool / tag。",
+          "request": {
+            "q": "文件被占用",
+            "scope": "machine",
+            "limit": 5
+          },
+          "response": {
+            "ok": true,
+            "count": 1,
+            "rows": [
+              {
+                "score": 12,
+                "hits": ["symptom:占用", "scope:machine"],
+                "entry": {
+                  "id": "ERR-20261124-091533-a1b2c3",
+                  "symptom": "The process cannot access the file…",
+                  "severity": "major",
+                  "count": 3
+                }
+              }
+            ]
+          },
+          "curl": "curl \"http://127.0.0.1:57911/api/search?q=%E6%96%87%E4%BB%B6%E8%A2%AB%E5%8D%A0%E7%94%A8&limit=5\""
+        },
+        {
+          "id": "errvault.stats",
+          "name": "统计（输出）",
+          "method": "GET",
+          "path": "/api/stats",
+          "desc": "按类型 / 范围 / 复现率 / 严重度分组，并给出出现次数最多的前几条。",
+          "request": null,
+          "response": {
+            "ok": true,
+            "total": 12,
+            "totalCount": 19,
+            "resolved": 11,
+            "unresolved": 1,
+            "byScope": { "machine": 6, "project": 5, "global": 1 },
+            "bySeverity": { "major": 7, "blocker": 3, "minor": 2 },
+            "topRecur": [{ "id": "ERR-…", "count": 4, "symptom": "The process cannot access the file…" }]
+          },
+          "curl": "curl http://127.0.0.1:57911/api/stats"
+        },
+        {
+          "id": "errvault.logs",
+          "name": "运行日志（输出）",
+          "method": "GET",
+          "path": "/api/logs",
+          "desc": "按月分文件的运行日志尾部，含 add / recur / update / hit / search / boot。",
+          "request": { "tail": 200 },
+          "response": {
+            "ok": true,
+            "file": "errvault-202611.log",
+            "total": 128,
+            "lines": ["2026-11-24 09:15:33  INFO   add   ERR-…  kind=blocked  scope=machine  count=1"]
+          },
+          "curl": "curl \"http://127.0.0.1:57911/api/logs?tail=50\""
+        }
+      ]
+    },
+    {
+      "id": "codevault",
+      "title": "索引库 · CodeVault",
+      "port": "codevault",
+      "desc": "项目索引与服务编排；跨域代理也在这里（设置页只跟它通信）。",
+      "endpoints": [
+        {
+          "id": "codevault.file",
+          "name": "读取源码（输出）",
+          "method": "GET",
+          "path": "/api/file",
+          "desc": "只允许 codeRoots 白名单内的文本文件，上限 512 KB。",
+          "request": { "path": "E:\\AIWorkKit\\payload\\tools\\launch.mjs" },
+          "response": {
+            "ok": true,
+            "path": "E:\\AIWorkKit\\payload\\tools\\launch.mjs",
+            "lines": 320,
+            "bytes": 12044,
+            "text": "#!/usr/bin/env node\n…"
+          },
+          "curl": "curl \"http://127.0.0.1:57910/api/file?path=E%3A%5CAIWorkKit%5Cpayload%5Ctools%5Claunch.mjs\""
+        },
+        {
+          "id": "codevault.launch",
+          "name": "拉起服务（写入）",
+          "method": "POST",
+          "path": "/api/launch",
+          "desc": "只允许本机调用；带请求体时必须是 JSON。",
+          "request": { "app": "eco" },
+          "response": { "ok": true, "app": "eco", "started": false, "url": "http://127.0.0.1:57821/" },
+          "curl": "curl -X POST http://127.0.0.1:57910/api/launch -H \"content-type: application/json\" -d \"{\\\"app\\\":\\\"eco\\\"}\""
+        }
+      ]
+    }
+  ]
+}

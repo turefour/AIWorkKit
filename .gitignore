@@ -1,0 +1,28 @@
+# 构建产物：由 build/build-package.ps1 每次重新生成，不入库
+#
+# 注意：apps/ 在 AIWorkKit 里不再忽略。
+# 旧版把四个 app 当外部依赖（各自有仓库），通用版是独立产品，
+# 源码必须随仓库一起走，否则 clone 下来无法构建与运行。
+payload/runtime/
+payload/shell/*.exe
+payload/native/*.exe
+installer.exe
+*.zip
+
+# 运行时状态与日志
+state/
+*.log
+*.pid
+
+# 系统杂物
+Thumbs.db
+.DS_Store
+~$*
+# added by adopt-project（注意：不能用 build/ 规则，build/ 目录里放的是构建脚本本身）
+node_modules/
+dist/
+coverage/
+.cache/
+.env
+.env.*
+*.tsbuildinfo

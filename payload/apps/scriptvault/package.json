@@ -1,0 +1,14 @@
+{
+  "name": "script-vault",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Reusable script library: shared modules, CLI tools and their index",
+  "scripts": {
+    "test": "node --test",
+    "index": "node build-index.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

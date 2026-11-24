@@ -1,0 +1,21 @@
+{
+  "name": "eco",
+  "description": "AIWorkKit 运行时监控与可视化：实时采集插件、脚本、工具调用与可量化流程进度，并在独立桌面窗口中呈现仪表盘。",
+  "version": "1.0.0",
+  "author": {
+    "name": "eco"
+  },
+  "keywords": [
+    "aiworkkit",
+    "monitor",
+    "runtime",
+    "progress",
+    "observability",
+    "dashboard"
+  ],
+  "license": "MIT",
+  "homepage": {
+    "url": null,
+    "type": "none"
+  }
+}

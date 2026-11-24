@@ -1,0 +1,23 @@
+{
+  "name": "tuner",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AIWorkKit idle tuner: trim working sets, lower CPU priority and suspend background children without closing the IDE.",
+  "main": "cli/tuner.js",
+  "bin": {
+    "tuner": "cli/tuner.js"
+  },
+  "scripts": {
+    "status": "node cli/tuner.js status",
+    "quiet": "node cli/tuner.js apply --mode lite",
+    "deep": "node cli/tuner.js apply --mode deep",
+    "restore": "node cli/tuner.js restore",
+    "tray": "node cli/tuner.js tray",
+    "open": "node cli/tuner.js open",
+    "serve": "node cli/tuner.js serve"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {}
+}

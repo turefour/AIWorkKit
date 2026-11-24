@@ -1,0 +1,52 @@
+{
+  "$comment": "AI 编程平台接入档案。安装规则、扫描插件、接收事件都按这里的目录走，新增平台只需加一条。",
+  "version": 1,
+  "default": "generic",
+  "platforms": {
+    "generic": {
+      "label": "通用（HTTP 上报）",
+      "configDir": "~/.aiworkkit",
+      "rulesDir": "~/.aiworkkit/rules",
+      "settingsFile": "~/.aiworkkit/config.json",
+      "pluginsDir": "~/.aiworkkit/plugins",
+      "eventSource": "http",
+      "note": "任何平台都可以用 HTTP 直接上报，无需插件。"
+    },
+    "codebuddy": {
+      "label": "CodeBuddy",
+      "configDir": "~/.codebuddy",
+      "rulesDir": "~/.codebuddy/rules",
+      "settingsFile": "~/.codebuddy/settings.json",
+      "pluginsDir": "~/.codebuddy/plugins",
+      "eventSource": "hook",
+      "note": "通过 hooks/pulse-hook 等价机制注入；规则文件为 deploy-target.mdc。"
+    },
+    "codex": {
+      "label": "Codex CLI",
+      "configDir": "~/.codex",
+      "rulesDir": "~/.codex/rules",
+      "settingsFile": "~/.codex/config.json",
+      "pluginsDir": "~/.codex/plugins",
+      "eventSource": "wrapper",
+      "note": "用 adapters/codex.mjs 包一层命令，捕获 stdout 事件并转发。"
+    },
+    "deepseek": {
+      "label": "DeepSeek Harness",
+      "configDir": "~/.deepseek",
+      "rulesDir": "~/.deepseek/rules",
+      "settingsFile": "~/.deepseek/settings.json",
+      "pluginsDir": "~/.deepseek/plugins",
+      "eventSource": "stdin",
+      "note": "用 adapters/deepseek.mjs 从 stdin 读取事件流。"
+    },
+    "vibe": {
+      "label": "Vibe Coding",
+      "configDir": "~/.vibe",
+      "rulesDir": "~/.vibe/rules",
+      "settingsFile": "~/.vibe/settings.json",
+      "pluginsDir": "~/.vibe/plugins",
+      "eventSource": "http",
+      "note": "直接向 /api/events 发标准事件即可。"
+    }
+  }
+}

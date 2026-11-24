@@ -1,0 +1,312 @@
+{
+  "schema": 1,
+  "generatedAt": "2026-11-13",
+  "root": "C:\\Users\\GH\\Desktop\\ScriptVault",
+  "summary": {
+    "total": 20,
+    "modules": 6,
+    "tools": 8,
+    "python": 3,
+    "tests": 3,
+    "documented": 20
+  },
+  "categories": [
+    {
+      "id": "browser",
+      "label": "浏览器 / CDP",
+      "count": 2
+    },
+    {
+      "id": "cad",
+      "label": "制图 / DXF",
+      "count": 1
+    },
+    {
+      "id": "core",
+      "label": "核心模块",
+      "count": 3
+    },
+    {
+      "id": "data",
+      "label": "数据处理",
+      "count": 1
+    },
+    {
+      "id": "scaffold",
+      "label": "脚手架 / 索引",
+      "count": 3
+    },
+    {
+      "id": "system",
+      "label": "系统 / 进程",
+      "count": 6
+    },
+    {
+      "id": "test",
+      "label": "回归测试",
+      "count": 4
+    }
+  ],
+  "entries": [
+    {
+      "kind": "lib",
+      "file": "cdp.mjs",
+      "path": "lib/cdp.mjs",
+      "bytes": 7625,
+      "mtime": "2026-11-12",
+      "name": "cdp",
+      "category": "browser",
+      "purpose": "Chromium DevTools Protocol client: launch Edge, connect, evaluate, screenshot, collect console errors.",
+      "input": "",
+      "usage": "import { capturePage } from '../lib/cdp.mjs';",
+      "reuse": false
+    },
+    {
+      "kind": "lib",
+      "file": "cli.mjs",
+      "path": "lib/cli.mjs",
+      "bytes": 2997,
+      "mtime": "2026-11-12",
+      "name": "cli",
+      "category": "core",
+      "purpose": "Minimal argv parser shared by every tool: long flags, values, positionals, --help.",
+      "input": "",
+      "usage": "import { parseArgs, usage } from '../lib/cli.mjs';",
+      "reuse": false
+    },
+    {
+      "kind": "lib",
+      "file": "fsx.mjs",
+      "path": "lib/fsx.mjs",
+      "bytes": 3105,
+      "mtime": "2026-11-12",
+      "name": "fsx",
+      "category": "core",
+      "purpose": "File helpers repeated across scripts: atomic JSON, safe walk, path guards.",
+      "input": "",
+      "usage": "import { readJson, writeJson, walk, insideRoot } from '../lib/fsx.mjs';",
+      "reuse": false
+    },
+    {
+      "kind": "lib",
+      "file": "httpserver.mjs",
+      "path": "lib/httpserver.mjs",
+      "bytes": 9872,
+      "mtime": "2026-11-12",
+      "name": "httpserver",
+      "category": "system",
+      "purpose": "Zero-dependency HTTP layer distilled from the three local dashboards: routes, JSON, static, CSRF guard, SSE.",
+      "input": "createApp({ root, token, tokenHeader })",
+      "usage": "const app = createApp({ root: process.cwd() }); app.get('/api/health', ...); app.listen(47910);",
+      "reuse": true
+    },
+    {
+      "kind": "lib",
+      "file": "log.mjs",
+      "path": "lib/log.mjs",
+      "bytes": 2095,
+      "mtime": "2026-11-12",
+      "name": "log",
+      "category": "core",
+      "purpose": "Tiny logger with levels, ISO timestamps, secret redaction and optional file sink.",
+      "input": "",
+      "usage": "import { createLogger } from '../lib/log.mjs';",
+      "reuse": false
+    },
+    {
+      "kind": "lib",
+      "file": "repo.mjs",
+      "path": "lib/repo.mjs",
+      "bytes": 4279,
+      "mtime": "2026-11-13",
+      "name": "repo",
+      "category": "system",
+      "purpose": "Read-only Git snapshot inspection for a list of repositories (portable git aware).",
+      "input": "",
+      "usage": "import { findGit, inspectRepo, inspectAll } from '../lib/repo.mjs';",
+      "reuse": false
+    },
+    {
+      "kind": "py",
+      "file": "dxf_draw.py",
+      "path": "py/dxf_draw.py",
+      "bytes": 9711,
+      "mtime": "2026-11-13",
+      "name": "dxf_draw",
+      "category": "cad",
+      "purpose": "DXF 绘图原语与 A3/A4 图框：线 / 折线 / 矩形 / 圆 / 十字中心线 / 文字 /",
+      "input": "import dxf_draw as dd",
+      "usage": "doc, msp = dd.new_drawing()",
+      "reuse": true
+    },
+    {
+      "kind": "py",
+      "file": "excel_report.py",
+      "path": "py/excel_report.py",
+      "bytes": 7856,
+      "mtime": "2026-11-13",
+      "name": "excel_report",
+      "category": "data",
+      "purpose": "Excel 报表排版原语：标题 / 说明 / 表头 / 数据行 / 列宽 / 冻结 / 斑马纹，",
+      "input": "import excel_report as xl",
+      "usage": "wb = xl.new_workbook()",
+      "reuse": true
+    },
+    {
+      "kind": "py",
+      "file": "selftest.py",
+      "path": "py/selftest.py",
+      "bytes": 3304,
+      "mtime": "2026-11-13",
+      "name": "py-selftest",
+      "category": "test",
+      "purpose": "回归测试：excel_report 与 dxf_draw 两个模块生成产物后回读校验，",
+      "input": "无（自建临时文件）",
+      "usage": "python py/selftest.py",
+      "reuse": true
+    },
+    {
+      "kind": "tests",
+      "file": "cli.test.mjs",
+      "path": "tests/cli.test.mjs",
+      "bytes": 2453,
+      "mtime": "2026-11-12",
+      "name": "cli.test",
+      "category": "test",
+      "purpose": "Regression tests for the shared argv parser and help renderer.",
+      "input": "none",
+      "usage": "node --test tests/",
+      "reuse": true
+    },
+    {
+      "kind": "tests",
+      "file": "fsx.test.mjs",
+      "path": "tests/fsx.test.mjs",
+      "bytes": 3402,
+      "mtime": "2026-11-12",
+      "name": "fsx.test",
+      "category": "test",
+      "purpose": "Regression tests for atomic JSON writes, safe walk and path guards.",
+      "input": "none",
+      "usage": "node --test tests/",
+      "reuse": true
+    },
+    {
+      "kind": "tests",
+      "file": "httpserver.test.mjs",
+      "path": "tests/httpserver.test.mjs",
+      "bytes": 5821,
+      "mtime": "2026-11-12",
+      "name": "httpserver.test",
+      "category": "test",
+      "purpose": "End-to-end tests for the shared HTTP layer: routing, params, static, CSRF guard, token, 405.",
+      "input": "none",
+      "usage": "node --test",
+      "reuse": true
+    },
+    {
+      "kind": "tools",
+      "file": "adopt-project.mjs",
+      "path": "tools/adopt-project.mjs",
+      "bytes": 13476,
+      "mtime": "2026-11-12",
+      "name": "adopt-project",
+      "category": "scaffold",
+      "purpose": "Onboard a project directory in one shot: generate .gitignore, init the",
+      "input": "<dir> [--name slug] [--label 显示名] [--kind 类型] [--note 说明]",
+      "usage": "node tools/adopt-project.mjs \"C:\\Users\\GH\\Desktop\\my-project\" --name my-project",
+      "reuse": true
+    },
+    {
+      "kind": "tools",
+      "file": "git-report.mjs",
+      "path": "tools/git-report.mjs",
+      "bytes": 3498,
+      "mtime": "2026-11-13",
+      "name": "git-report",
+      "category": "system",
+      "purpose": "Snapshot every tracked repository: last commit, branch, uncommitted count.",
+      "input": "[--repo <path>]... [--json] [--md <file>] [--strict]",
+      "usage": "node tools/git-report.mjs --json",
+      "reuse": true
+    },
+    {
+      "kind": "tools",
+      "file": "measure-cost.mjs",
+      "path": "tools/measure-cost.mjs",
+      "bytes": 9711,
+      "mtime": "2026-11-13",
+      "name": "measure-cost",
+      "category": "system",
+      "purpose": "Measure whether calling a tool is cheaper than writing it from scratch:",
+      "input": "[--json] [--runs N] [--include-self]",
+      "usage": "node tools/measure-cost.mjs",
+      "reuse": true
+    },
+    {
+      "kind": "tools",
+      "file": "measure-library.mjs",
+      "path": "tools/measure-library.mjs",
+      "bytes": 9530,
+      "mtime": "2026-11-13",
+      "name": "measure-library",
+      "category": "system",
+      "purpose": "Measure the whole-library cost: discovering a tool inside the library",
+      "input": "[--json] [--cold]   --cold counts reading the ENTIRE index to discover",
+      "usage": "node tools/measure-library.mjs",
+      "reuse": true
+    },
+    {
+      "kind": "tools",
+      "file": "prune-artifacts.mjs",
+      "path": "tools/prune-artifacts.mjs",
+      "bytes": 4754,
+      "mtime": "2026-11-13",
+      "name": "prune-artifacts",
+      "category": "system",
+      "purpose": "按扩展名清理目录里的产物文件（截图、日志、临时输出），默认先演练，",
+      "input": "<dir> [--ext png,out,log] [--dry] [--recursive] [--limit N]",
+      "usage": "node tools/prune-artifacts.mjs \"C:\\path\" --ext png,out,log --dry",
+      "reuse": true
+    },
+    {
+      "kind": "tools",
+      "file": "scaffold.mjs",
+      "path": "tools/scaffold.mjs",
+      "bytes": 3430,
+      "mtime": "2026-11-12",
+      "name": "scaffold",
+      "category": "scaffold",
+      "purpose": "Create a new tool with the standard header, argv parsing and logger wired up.",
+      "input": "<name> --purpose \"...\" [--category browser] [--python]",
+      "usage": "node tools/scaffold.mjs fetch-docs --purpose \"Download release notes\" --category web",
+      "reuse": true
+    },
+    {
+      "kind": "tools",
+      "file": "shot.mjs",
+      "path": "tools/shot.mjs",
+      "bytes": 2862,
+      "mtime": "2026-11-12",
+      "name": "shot",
+      "category": "browser",
+      "purpose": "Capture a local page over CDP: screenshot, console errors, node counts.",
+      "input": "--url <url> [--out png] [--width 1440] [--height 1000] [--wait 3000]",
+      "usage": "node tools/shot.mjs --url http://127.0.0.1:47910/ --launch --out shot.png --close",
+      "reuse": true
+    },
+    {
+      "kind": "tools",
+      "file": "snippet.mjs",
+      "path": "tools/snippet.mjs",
+      "bytes": 7104,
+      "mtime": "2026-11-13",
+      "name": "snippet",
+      "category": "scaffold",
+      "purpose": "按关键词检索脚本库并直接执行，替代「打开网页→翻列表→复制命令」的三步走",
+      "input": "",
+      "usage": "node tools/snippet.mjs search 截图",
+      "reuse": false
+    }
+  ]
+}

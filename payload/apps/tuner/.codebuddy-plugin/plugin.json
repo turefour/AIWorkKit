@@ -1,0 +1,21 @@
+{
+  "name": "tuner",
+  "description": "AIWorkKit 空闲降温器：不关闭软件的前提下手动回收内存工作集、降低 CPU 优先级、挂起后台子进程；随 AIWorkKit 启动拉起托盘与独立仪表盘窗口，可一键唤醒恢复。",
+  "version": "1.0.0",
+  "author": {
+    "name": "tuner"
+  },
+  "keywords": [
+    "aiworkkit",
+    "memory",
+    "idle",
+    "performance",
+    "tray",
+    "working-set"
+  ],
+  "license": "MIT",
+  "homepage": {
+    "url": null,
+    "type": "none"
+  }
+}

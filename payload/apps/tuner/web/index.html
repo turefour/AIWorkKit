@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AIWorkKit 空闲降温器</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="flake" aria-hidden="true"></span>
+      <div class="brand-text">
+        <h1>AIWorkKit 空闲降温器</h1>
+        <p>不关闭软件，手动回收内存 / 降优先级 / 挂起后台</p>
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <span class="pill" id="runState">连接中…</span>
+      <button class="ghost" id="btnTray" title="启动任务栏托盘">托盘</button>
+      <button class="ghost" id="btnRefresh" title="立即刷新">刷新</button>
+    </div>
+  </header>
+
+  <main class="grid">
+
+    <section class="panel hero">
+      <div class="hero-head">
+        <span class="label">工作集合计</span>
+        <span class="trend" id="trend">—</span>
+      </div>
+
+      <div class="hero-value">
+        <span class="num" id="totalMB">—</span>
+        <span class="unit">MB</span>
+      </div>
+
+      <svg class="spark" id="spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="rgba(56,224,238,.45)" />
+            <stop offset="100%" stop-color="rgba(56,224,238,0)" />
+          </linearGradient>
+        </defs>
+        <path id="sparkArea" fill="url(#sparkFill)" d=""></path>
+        <polyline id="sparkLine" fill="none" stroke="#38e0ee" stroke-width="1" stroke-linejoin="round" points=""></polyline>
+      </svg>
+
+      <div class="chips">
+        <div class="chip"><span>私有提交</span><b id="privateMB">—</b></div>
+        <div class="chip"><span>CPU</span><b id="cpuPercent">—</b></div>
+        <div class="chip"><span>进程</span><b id="procCount">—</b></div>
+        <div class="chip" id="chipSuspended"><span>已挂起</span><b id="suspendedCount">0</b></div>
+      </div>
+    </section>
+
+    <section class="panel actions">
+      <div class="panel-head">
+        <h2>降温动作</h2>
+        <label class="switch" title="每轮对话结束后延迟 120 秒自动降温">
+          <input type="checkbox" id="autoMode" />
+          <span class="track"><span class="knob"></span></span>
+          <span class="switch-text">空闲自动</span>
+        </label>
+      </div>
+
+      <button class="act primary" data-act="apply" data-mode="lite">
+        <span class="act-title">一键降温</span>
+        <span class="act-sub">回收内存 + BelowNormal 优先级 + EcoQoS</span>
+      </button>
+
+      <button class="act" data-act="apply" data-mode="deep">
+        <span class="act-title">深度降温</span>
+        <span class="act-sub">CPU 压到 Idle，空闲时几乎不抢资源</span>
+      </button>
+
+      <div class="act-row">
+        <button class="act small" data-act="trim">
+          <span class="act-title">只回收内存</span>
+          <span class="act-sub">保留当前优先级</span>
+        </button>
+        <button class="act small danger" data-act="suspend">
+          <span class="act-title">挂起后台</span>
+          <span class="act-sub">需托盘唤醒</span>
+        </button>
+      </div>
+
+      <button class="act restore" data-act="restore">
+        <span class="act-title">恢复全部</span>
+        <span class="act-sub">唤醒被挂起进程 + 优先级还原为 Normal</span>
+      </button>
+    </section>
+
+    <section class="panel roles">
+      <div class="panel-head">
+        <h2>角色分布</h2>
+        <span class="hint" id="sampleHint">每 3 秒采样</span>
+      </div>
+      <div class="role-list" id="roleList"></div>
+    </section>
+
+    <section class="panel table-panel">
+      <div class="panel-head">
+        <h2>进程明细</h2>
+        <span class="hint" id="lastApply">最近降温：—</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>PID</th>
+              <th>角色</th>
+              <th class="r">工作集</th>
+              <th class="r">CPU</th>
+              <th>优先级</th>
+              <th>状态</th>
+            </tr>
+          </thead>
+          <tbody id="procBody">
+            <tr><td colspan="6" class="empty">加载中…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <span id="dataDir">—</span>
+    <span class="sep">·</span>
+    <span id="serverInfo">—</span>
+    <span class="sep">·</span>
+    <span id="clock">—</span>
+  </footer>
+
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="overlay" id="overlay" hidden><div class="spinner"></div><span id="overlayText">执行中…</span></div>
+
+<script src="app.js"></script>
+</body>
+</html>

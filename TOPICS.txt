@@ -1,0 +1,12 @@
+ai-coding
+ai-agent
+developer-tools
+observability
+local-first
+zero-dependency
+windows
+nodejs
+dashboard
+error-vault
+resource-monitor
+multi-platform
