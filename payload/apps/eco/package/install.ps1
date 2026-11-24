@@ -5,14 +5,14 @@
 .DESCRIPTION
   在目标设备上运行本脚本即可完成：
     1) 校验 node
-    2) 把插件装入 %USERPROFILE%\.codebuddy\plugins\marketplaces\eco-market
+    2) 把插件装入 [平台目录]\plugins\marketplaces\eco-market（默认 ~/.aiworkkit，可用 -Platform 指定）
     3) 注册 known_marketplaces / installed_plugins / settings.enabledPlugins
-    4) 生成 ~/.codebuddy/rules/eco-first.mdc（路径按本机实际位置写入）
+    4) 生成 [平台目录]/rules/eco-first.mdc（路径按本机实际位置写入）
     5) 启动守护进程
   所有被修改的 json/规则文件都会先备份为 *.bak_eco_<时间戳>。
 
 .PARAMETER Link
-  用目录联接指向包内插件目录（便于随包更新），默认把插件复制进 .codebuddy。
+  用目录联接指向包内插件目录（便于随包更新），默认复制进 -Platform 指定的平台目录。
 
 .PARAMETER DryRun
   只打印将要执行的动作，不修改任何文件。
@@ -39,17 +39,43 @@ if (-not (Test-Path (Join-Path $packageRoot 'eco'))) {
   $packageRoot = Split-Path -Parent $PSScriptRoot
 }
 $source = Join-Path $packageRoot 'eco'
+
+# 插件清单：通用名 .aiplugin 优先，历史名 .codebuddy-plugin 仍兼容。
+# 市场清单（marketplace.json）沿用平台自身的目录约定，不在此处改写。
+function Test-PluginManifest($dir) {
+  foreach ($name in @('.aiplugin', '.codebuddy-plugin')) {
+    if (Test-Path (Join-Path $dir ($name + '\plugin.json'))) { return $true }
+  }
+  return $false
+}
 $rulesTemplate = Join-Path $PSScriptRoot 'rules\eco-first.mdc.template'
 
 $home_ = $env:USERPROFILE
-$cbDir = Join-Path $home_ '.codebuddy'
-$pluginsDir = Join-Path $cbDir 'plugins'
+
+# 插件装到哪个平台由 -Platform 决定，目录取自 config/platforms.json。
+# 以前写死 .codebuddy，等于这套安装器只服务一个平台。
+$kitRoot = $null
+try { $kitRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..\..") -ErrorAction Stop).Path } catch { $kitRoot = $null }
+$platformsFile = if ($kitRoot) { Join-Path $kitRoot "config\platforms.json" } else { "" }
+$platformCfg = $null
+if ($platformsFile -and (Test-Path $platformsFile)) {
+  try {
+    $allPlatforms = Get-Content $platformsFile -Raw -Encoding UTF8 | ConvertFrom-Json
+    $platformCfg = $allPlatforms.platforms.$Platform
+  } catch { $platformCfg = $null }
+}
+$configDirRaw = if ($platformCfg -and $platformCfg.configDir) { [string]$platformCfg.configDir } else { "~/.aiworkkit" }
+if ($configDirRaw.StartsWith("~")) {
+  $configDirRaw = Join-Path $home_ ($configDirRaw.Substring(1).TrimStart("\", "/"))
+}
+$platformDir = $configDirRaw
+$pluginsDir = Join-Path $platformDir 'plugins'
 $marketDir = Join-Path $pluginsDir 'marketplaces\eco-market'
 $target = Join-Path $marketDir 'plugins\eco'
-$settingsFile = Join-Path $cbDir 'settings.json'
+$settingsFile = Join-Path $platformDir 'settings.json'
 $knownFile = Join-Path $pluginsDir 'known_marketplaces.json'
 $installedFile = Join-Path $pluginsDir 'installed_plugins.json'
-$rulesDir = Join-Path $cbDir 'rules'
+$rulesDir = Join-Path $platformDir 'rules'
 $ruleFile = Join-Path $rulesDir 'eco-first.mdc'
 $stamp = Get-Date -Format 'yyyyMMddHHmmss'
 $key = 'eco@eco-market'
@@ -95,7 +121,7 @@ Write-Host ('  包目录     : ' + $packageRoot)
 Write-Host ('  安装目标   : ' + $target)
 Write-Host ('  插件注册名 : ' + $key)
 
-if (-not (Test-Path (Join-Path $source '.codebuddy-plugin\plugin.json'))) {
+if (-not (Test-PluginManifest $source)) {
   Write-Host ('找不到插件本体：' + $source) -ForegroundColor Red
   Write-Host '请确认压缩包完整解压后再运行本脚本。' -ForegroundColor Red
   exit 1
@@ -134,7 +160,7 @@ if ($Link) {
   if (Test-Path $target) { Remove-Item -LiteralPath $target -Recurse -Force }
   New-Item -ItemType Junction -Path $target -Target $source | Out-Null
   Write-Host '  已创建目录联接（更新包内容即生效）'
-} elseif (Test-Path (Join-Path $target '.codebuddy-plugin\plugin.json')) {
+} elseif (Test-PluginManifest $target) {
   # 只同步代码与资源，不碰运行数据
   $exclude = @('.eco', 'logs', 'node_modules')
   foreach ($item in @('cli', 'commands', 'hooks', 'server', 'skills', 'test', 'web', 'package')) {
@@ -143,7 +169,7 @@ if ($Link) {
       Copy-Item -LiteralPath $from -Destination $target -Recurse -Force
     }
   }
-  foreach ($file in @('.codebuddy-plugin', 'package.json', 'README.md')) {
+  foreach ($file in @('.aiplugin', 'package.json', 'README.md')) {
     $from = Join-Path $source $file
     if (Test-Path $from) { Copy-Item -LiteralPath $from -Destination $target -Recurse -Force }
   }
@@ -169,7 +195,7 @@ $manifest = [pscustomobject]@{
     }
   )
 }
-New-Item -ItemType Directory -Force -Path (Join-Path $marketDir '.codebuddy-plugin') | Out-Null
+New-Item -ItemType Directory -Force -Path (Join-Path $marketDir '.aiplugin') | Out-Null
 Write-Json (Join-Path $marketDir '.codebuddy-plugin\marketplace.json') $manifest
 Write-Host '  市场清单已写入'
 

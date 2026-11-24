@@ -4,7 +4,7 @@
 
 .DESCRIPTION
   1) 解析运行时：优先用包内 runtime\node.exe，其次用系统 node
-  2) 把插件装到 %USERPROFILE%\.codebuddy\plugins\marketplaces\tuner-market
+  2) 把插件装到 [平台目录]\plugins\marketplaces\tuner-market（默认 ~/.aiworkkit，可用 -Platform 指定）
   3) 把 hooks.json 与 commands\*.md 里的 node 命令改写成运行时绝对路径，
      这样目标机器即使没有装 Node.js 也能跑 Hook 与命令
   4) 注册 known_marketplaces / installed_plugins / settings.enabledPlugins
@@ -38,21 +38,48 @@ $ErrorActionPreference = 'Stop'
 
 $packageRoot = $PSScriptRoot
 $source = Join-Path $PSScriptRoot 'tuner'
-if (-not (Test-Path (Join-Path $source '.codebuddy-plugin\plugin.json'))) {
+
+# 插件清单：通用名 .aiplugin 优先，历史名 .codebuddy-plugin 仍兼容
+function Test-PluginManifest($dir) {
+  foreach ($name in @('.aiplugin', '.codebuddy-plugin')) {
+    if (Test-Path (Join-Path $dir ($name + '\plugin.json'))) { return $true }
+  }
+  return $false
+}
+
+if (-not (Test-PluginManifest $source)) {
   # Repo layout: <repo>\package\install.ps1 with the plugin body one level up.
   $parent = Split-Path -Parent $PSScriptRoot
-  if (Test-Path (Join-Path $parent '.codebuddy-plugin\plugin.json')) {
+  if (Test-PluginManifest $parent) {
     $packageRoot = $parent
     $source = $parent
   }
 }
 $bundledRuntime = Join-Path $packageRoot 'runtime\node.exe'
 
-$cbDir         = Join-Path $env:USERPROFILE '.codebuddy'
-$pluginsDir    = Join-Path $cbDir 'plugins'
+$home_ = $env:USERPROFILE
+
+# 插件装到哪个平台由 -Platform 决定，目录取自 config/platforms.json。
+# 以前写死 .codebuddy，等于这套安装器只服务一个平台。
+$kitRoot = $null
+try { $kitRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..\..") -ErrorAction Stop).Path } catch { $kitRoot = $null }
+$platformsFile = if ($kitRoot) { Join-Path $kitRoot "config\platforms.json" } else { "" }
+$platformCfg = $null
+if ($platformsFile -and (Test-Path $platformsFile)) {
+  try {
+    $allPlatforms = Get-Content $platformsFile -Raw -Encoding UTF8 | ConvertFrom-Json
+    $platformCfg = $allPlatforms.platforms.$Platform
+  } catch { $platformCfg = $null }
+}
+$configDirRaw = if ($platformCfg -and $platformCfg.configDir) { [string]$platformCfg.configDir } else { "~/.aiworkkit" }
+if ($configDirRaw.StartsWith("~")) {
+  $configDirRaw = Join-Path $home_ ($configDirRaw.Substring(1).TrimStart("\", "/"))
+}
+$platformDir = $configDirRaw
+$pluginsDir    = Join-Path $platformDir 'plugins'
 $marketDir     = Join-Path $pluginsDir 'marketplaces\tuner-market'
 $target        = Join-Path $marketDir 'plugins\tuner'
-$settingsFile  = Join-Path $cbDir 'settings.json'
+$settingsFile  = Join-Path $platformDir 'settings.json'
 $knownFile     = Join-Path $pluginsDir 'known_marketplaces.json'
 $installedFile = Join-Path $pluginsDir 'installed_plugins.json'
 $stamp         = Get-Date -Format 'yyyyMMddHHmmss'
@@ -220,7 +247,7 @@ if ($Link) {
   New-Item -ItemType Junction -Path $target -Target $source | Out-Null
   Write-Host '  已创建目录联接（改仓库即生效）'
 } else {
-  $dirs = @('cli', 'core', 'commands', 'hooks', 'tray', 'server', 'web', '.codebuddy-plugin')
+  $dirs = @('cli', 'core', 'commands', 'hooks', 'tray', 'server', 'web', '.aiplugin')
   foreach ($d in $dirs) {
     $from = Join-Path $source $d
     if (Test-Path $from) {
@@ -267,7 +294,7 @@ $manifest = [pscustomobject]@{
     }
   )
 }
-New-Item -ItemType Directory -Force -Path (Join-Path $marketDir '.codebuddy-plugin') | Out-Null
+New-Item -ItemType Directory -Force -Path (Join-Path $marketDir '.aiplugin') | Out-Null
 Write-Json (Join-Path $marketDir '.codebuddy-plugin\marketplace.json') $manifest
 Write-Host '  市场清单已写入'
 

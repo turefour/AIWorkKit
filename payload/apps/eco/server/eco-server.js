@@ -144,12 +144,13 @@ const HOST = process.env.AIWORKKIT_ECO_HOST || '127.0.0.1';
 /**
  * 用量统计（模块级累计，全进程唯一）。
  *
- * AIWorkKit 没有把 token 用量写进任何可读文件：projects/*.jsonl 里没有 usage
- * 字段，local_storage/*.info 是 gzip+base64。所以这里统计真实可采集的量 ——
- * 经 hook 上报的事件条数与序列化字节数，再按 3.8 字符/token 折算成量级参考。
+ * 各 AI 编程平台的 token 记录格式不统一：有的写在会话 JSONL 的 usage 字段里，
+ * 有的塞进本地 sqlite，有的只存在于 gzip+base64 的内部状态文件中，没有一个
+ * 跨平台通用的读取方式。所以这里只统计「真实可采集的量」—— 经接入接口上报的
+ * 事件条数与序列化字节数，再按 3.8 字符/token 折算成量级参考。
  *
- * 用途是判断「这个任务大概跑了多少东西」，不是精确账单。要精确值必须由 CLI
- * 侧把 usage 写进事件；estTokens 这个前缀就是在标明「估算」。
+ * 用途是判断「这个任务大概跑了多少东西」，不是精确账单。要精确值必须由接入方
+ * 在自己的事件里带上 usage；estTokens 这个前缀就是在标明「估算」。
  */
 const usageStats = { events: 0, chars: 0, since: Date.now() };
 const START_AT = Date.now();
@@ -528,12 +529,12 @@ function syncTodos(sid, toolName, input, ts) {
  */
 const GENERIC_EVENT_MAP = {
   'turn.start': 'UserPromptSubmit',
-  'session.start': 'UserPromptSubmit',
+  'turn.end': 'Stop',
+  'session.start': 'SessionStart',
+  'session.end': 'SessionEnd',
   'tool.start': 'PreToolUse',
   'tool.end': 'PostToolUse',
-  'tool.fail': 'PostToolUse',
-  'turn.end': 'Stop',
-  'session.end': 'Stop'
+  'tool.fail': 'PostToolUse'
 };
 
 function normalizeEvent(payload) {
@@ -542,15 +543,27 @@ function normalizeEvent(payload) {
   if (!mapped) return payload;
 
   const out = { ...payload, event: mapped };
-  // 通用体把命令放在 payload.command；内部按 toolInput 提取目标
+
+  // 标准体把工具细节放在 payload 子对象里（{payload:{tool,command}}），
+  // 内部则读顶层的 tool / toolInput。两处都认，接入方不用关心内部结构。
+  const nested = payload.payload && typeof payload.payload === 'object' ? payload.payload : null;
+
   if (!out.toolInput) {
     const input = {};
     if (payload.command) input.command = payload.command;
     if (payload.filePath) input.file_path = payload.filePath;
     if (payload.pattern) input.pattern = payload.pattern;
+    if (nested) {
+      if (!input.command && nested.command) input.command = nested.command;
+      if (!input.file_path && nested.filePath) input.file_path = nested.filePath;
+      if (!input.pattern && nested.pattern) input.pattern = nested.pattern;
+    }
     if (Object.keys(input).length) out.toolInput = input;
   }
-  if (!out.tool && payload.tool) out.tool = payload.tool;
+
+  if (!out.tool) {
+    out.tool = payload.tool || (nested && nested.tool) || '';
+  }
   return out;
 }
 
@@ -1059,6 +1072,90 @@ async function route(req, res) {
     const stack = String(body.stack || '').slice(0, 2000);
     logger.error('client', message + (source ? ' @ ' + source : ''), stack || undefined);
     return sendJson(res, 200, { ok: true });
+  }
+
+  /*
+   * 通用接入接口（平台无关）。
+   *
+   * /api/events 是内部 hook 通道：直接吃原生事件名，不做校验（老集成依赖它）。
+   * /api/ingest 面向外部平台，做三件事后再入库：
+   *   1. 校验 envelope —— event 必须是已知名字，否则 400 并回可选值
+   *   2. 通用事件名 → 内部事件名（复用 handleEvent 的映射表）
+   *   3. 补齐 platform / sessionId / job 默认值
+   * 返回映射结果，接入方可以据此自检。
+   *
+   * /v1/events 是别名，方便按版本号接入。
+   */
+  if (method === 'POST' && (pathname === '/api/ingest' || pathname === '/v1/events')) {
+    const body = await readBody(req);
+
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return sendJson(res, 400, { ok: false, error: 'body must be a JSON object' });
+    }
+
+    const ev = String(body.event || '').trim();
+    if (!ev) {
+      return sendJson(res, 400, { ok: false, error: 'event is required' });
+    }
+
+    const genericNames = Object.keys(GENERIC_EVENT_MAP);
+    const internalNames = Object.values(GENERIC_EVENT_MAP);
+    const known = genericNames.concat(internalNames);
+    if (!known.includes(ev)) {
+      return sendJson(res, 400, {
+        ok: false,
+        error: 'unknown event: ' + ev,
+        allowed: genericNames,
+        alsoAcceptsInternal: Array.from(new Set(internalNames))
+      });
+    }
+
+    const platform = String(body.platform || 'generic').slice(0, 40);
+    const normalized = normalizeEvent({
+      ...body,
+      event: ev,
+      platform,
+      at: body.at || new Date().toISOString()
+    });
+
+    // 会话标识兜底：没有 sessionId 时用 job.id，避免全部落到 'local' 互相干扰
+    const sid = normalized.sessionId || (normalized.job && normalized.job.id) || 'local';
+    normalized.sessionId = sid;
+    if (!normalized.ts) normalized.ts = Date.parse(normalized.at) || Date.now();
+
+    try {
+      usageStats.events += 1;
+      usageStats.chars += JSON.stringify(body).length;
+    } catch (_) {
+      /* 统计失败不影响入库 */
+    }
+
+    /*
+     * 只给「结束」事件的情况要补一条开始。
+     *
+     * 内部按 pendingTools 队列把 end 配对到 start，找不到就丢 —— 很多平台
+     * 只会上报「这一步做完了」，直接发 tool.end 会在看板上什么也看不到。
+     * 共用同一个 ts 才能落在同一个任务 id 上（id 里带时间戳）。
+     */
+    if (normalized.event === 'PostToolUse') {
+      const pending = pendingTools.get(sid) || [];
+      const tool = normalized.tool || '';
+      const hasPending = pending.some((p) => !tool || p.tool === tool);
+      if (!hasPending) {
+        handleEvent({ ...normalized, event: 'PreToolUse' });
+      }
+    }
+
+    handleEvent(normalized);
+
+    return sendJson(res, 200, {
+      ok: true,
+      accepted: true,
+      platform,
+      event: ev,
+      mapped: normalized.event,
+      jobId: (normalized.job && normalized.job.id) || normalized.sessionId || null
+    });
   }
 
   if (method === 'POST' && pathname === '/api/events') {

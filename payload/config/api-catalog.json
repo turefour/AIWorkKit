@@ -9,6 +9,36 @@
       "desc": "接收各 AI 平台上报的任务/工具事件，统计进度与资源占用，并按阈值自动降耗。",
       "endpoints": [
         {
+          "id": "eco.ingest",
+          "name": "通用接入（推荐）",
+          "method": "POST",
+          "path": "/api/ingest",
+          "desc": "平台无关的标准入口：校验事件名、补齐默认值、映射成内部事件后入库。别名 /v1/events。",
+          "request": {
+            "platform": "vibe",
+            "event": "tool.end",
+            "sessionId": "sess-9a1c",
+            "job": {
+              "id": "run-001",
+              "kind": "test",
+              "label": "pytest -q",
+              "status": "done",
+              "current": 12,
+              "total": 12
+            },
+            "payload": { "tool": "Bash", "command": "pytest -q", "exitCode": 0, "durationMs": 8800 }
+          },
+          "response": {
+            "ok": true,
+            "accepted": true,
+            "platform": "vibe",
+            "event": "tool.end",
+            "mapped": "PostToolUse",
+            "jobId": "run-001"
+          },
+          "curl": "curl -X POST http://127.0.0.1:{port}/api/ingest -H \"content-type: application/json\" -d @event.json"
+        },
+        {
           "id": "eco.events",
           "name": "上报事件（写入）",
           "method": "POST",
