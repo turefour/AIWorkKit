@@ -145,6 +145,9 @@ export function labelForCwd(cwd, projects) {
   const members = projects.filter((p) => p.session && p.session === base);
   if (members.length === 1) return members[0].name;
   if (members.length > 1) return members[0].name + ' 等' + members.length + '项';
+  // 平台会话目录名是 20260904150552 这种时间戳：转成「09-04 15:05」，图谱上才读得懂且不撞名
+  const stamp = /^(20\d{2})(\d{2})(\d{2})(\d{2})(\d{2})\d{2}$/.exec(base);
+  if (stamp) return stamp[2] + '-' + stamp[3] + ' ' + stamp[4] + ':' + stamp[5];
   return base;
 }
 

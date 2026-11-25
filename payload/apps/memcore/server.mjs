@@ -145,6 +145,20 @@ app.delete('/api/note', (ctx) => {
   return ctx.json(r.ok ? 200 : 404, r);
 });
 
+// 页面脚本报错回传：只落日志，不存库，避免把调试信息写进记忆
+app.post('/api/client-error', async (ctx) => {
+  const body = await ctx.body(64 * 1024);
+  if (body && typeof body === 'object') {
+    const msg = String(body.message || '').slice(0, 300);
+    if (msg) {
+      const where = String(body.source || '').slice(0, 120) + ':' + (Number(body.line) || 0);
+      const stack = String(body.stack || '').replace(/\s+/g, ' ').slice(0, 400);
+      logLine('error', 'client', msg + '  @' + where + (stack ? '  stack=' + stack : ''));
+    }
+  }
+  ctx.json(200, { ok: true });
+});
+
 app.post('/api/prune', (ctx) => {
   ctx.json(200, prune());
 });

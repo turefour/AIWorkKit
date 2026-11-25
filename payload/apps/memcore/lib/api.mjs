@@ -328,7 +328,7 @@ export function graph() {
       hubs.set(label, push({
         id: 'h:' + label,
         kind: 'hub',
-        label: label.length > 10 ? label.slice(0, 10) + '…' : label,
+        label: label.length > 12 ? label.slice(0, 12) + '…' : label,
         size: 10,
         text: label
       }));

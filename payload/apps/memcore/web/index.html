@@ -4,6 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>记忆库 · memcore</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%230e1116'/%3E%3Ccircle cx='5' cy='6' r='2' fill='%235ec8a8'/%3E%3Ccircle cx='11' cy='10' r='2' fill='%23e0b354'/%3E%3Cpath d='M5 6L11 10' stroke='%2359657a'/%3E%3C/svg%3E" />
 <style>
   :root {
     --bg: #0e1116;
@@ -109,7 +110,7 @@
 
   <section id="t-memory" class="on"><div class="card md" id="memory"></div></section>
 
-  <section id="t-notes">
+  <section id="t-notes"><span id="notes"></span>
     <div class="card">
       <div class="row" style="margin-bottom:10px">
         <select id="f-type">
@@ -144,7 +145,7 @@
     </div>
   </section>
 
-  <section id="t-search">
+  <section id="t-search"><span id="search"></span>
     <div class="card">
       <div class="row">
         <input id="s-q" class="grow" placeholder="关键词：报错原文、项目名、任务标题…" />
@@ -154,7 +155,8 @@
     </div>
   </section>
 
-  <section id="t-graph">
+  <!-- 锚点：内置浏览器按 location.hash 找元素，缺 id 会在其滚动逻辑里报 null -->
+  <section id="t-graph"><span id="graph"></span>
     <div class="card">
       <div class="row" style="margin-bottom:8px">
         <span class="sub">节点：项目（金）／主题词（青）／会话（灰）／条目（按类型着色）　拖动节点、滚轮缩放、点击查看正文</span>
@@ -543,6 +545,7 @@ async function loadGraph() {
 }
 
 gCanvas.addEventListener('mousemove', (ev) => {
+  if (!gCanvas) return;
   const rect = gCanvas.getBoundingClientRect();
   const mx = ev.clientX - rect.left;
   const my = ev.clientY - rect.top;
@@ -563,6 +566,7 @@ gCanvas.addEventListener('mousemove', (ev) => {
 });
 
 gCanvas.addEventListener('mousedown', (ev) => {
+  if (!gCanvas) return;
   const rect = gCanvas.getBoundingClientRect();
   const hit = hitTest(ev.clientX - rect.left, ev.clientY - rect.top);
   if (hit && GV) { GV.drag = hit; gCanvas.classList.add('dragging'); }
@@ -580,6 +584,7 @@ gCanvas.addEventListener('wheel', (ev) => {
 }, { passive: false });
 
 gCanvas.addEventListener('click', (ev) => {
+  if (!gCanvas) return;
   const rect = gCanvas.getBoundingClientRect();
   const hit = hitTest(ev.clientX - rect.left, ev.clientY - rect.top);
   if (!GV) return;
@@ -601,6 +606,43 @@ $('g-relayout').addEventListener('click', () => {
 });
 
 window.addEventListener('resize', () => { if (GV) { drawGraph(); drawHeat(GV.g.timeline); } });
+
+/* 全局错误上报：内置浏览器里出错只闪一下，这里落一行服务端日志，便于事后定位 */
+function reportClientError(payload) {
+  try {
+    fetch('/api/client-error', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  } catch (_) {
+    /* 上报失败不能影响页面 */
+  }
+}
+
+window.addEventListener('error', (ev) => {
+  // 资源 404（favicon、图片）没有 message，跳过，避免噪音
+  if (!ev || !ev.message) return;
+  reportClientError({
+    message: String(ev.message),
+    source: ev.filename || '',
+    line: ev.lineno || 0,
+    stack: (ev.error && ev.error.stack) || ''
+  });
+  toast('页面脚本错误：' + ev.message);
+});
+
+window.addEventListener('unhandledrejection', (ev) => {
+  const reason = ev && ev.reason ? String(ev.reason.message || ev.reason) : 'unknown';
+  reportClientError({ message: 'unhandledrejection: ' + reason, stack: (ev.reason && ev.reason.stack) || '' });
+});
+
+/* 深链：#graph / #notes 刷新后仍停在同一页签（内置浏览器常直接给带 hash 的地址） */
+const hashTab = (location.hash || '').replace(/^#/, '');
+if (hashTab) {
+  const link = document.querySelector('nav a[data-tab="' + hashTab + '"]');
+  if (link) link.click();
+}
 
 loadOverview().catch((e) => toast('加载失败：' + e.message));
 </script>
