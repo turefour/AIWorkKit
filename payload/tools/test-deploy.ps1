@@ -72,7 +72,7 @@ if (Test-Path $configFile) {
   Add-Result '配置文件' 'fail' ('缺少 ' + $configFile)
 }
 
-foreach ($app in @('codevault', 'eco', 'tuner', 'scriptvault')) {
+foreach ($app in @('codevault', 'eco', 'tuner', 'scriptvault', 'memcore')) {
   $dir = Join-Path $Target ('apps\' + $app)
   $count = if (Test-Path $dir) { (Get-ChildItem $dir -Recurse -File -Force | Measure-Object).Count } else { 0 }
   if ($count -gt 0) {
@@ -82,7 +82,7 @@ foreach ($app in @('codevault', 'eco', 'tuner', 'scriptvault')) {
   }
 }
 
-foreach ($file in @('启动索引库.cmd', '启动全部服务.cmd', '停止全部服务.cmd', '一键清理与回退.cmd', 'tools\launch.mjs', 'tools\stop.mjs')) {
+foreach ($file in @('启动索引库.cmd', '启动全部服务.cmd', '停止全部服务.cmd', '一键清理与回退.cmd', 'tools\launch.mjs', 'tools\stop.mjs', 'tools\memcore.mjs')) {
   $path = Join-Path $Target $file
   if (Test-Path $path) { Add-Result ('文件 ' + $file) 'pass' '存在' }
   else { Add-Result ('文件 ' + $file) 'fail' '缺失' }
@@ -124,6 +124,7 @@ if ($SkipStart) {
   }
 
   $checks = @(
+    @{ name = '记忆库 health'; url = ('http://127.0.0.1:' + $(if ($config.ports.memcore) { $config.ports.memcore } else { 57912 }) + '/api/health'); port = $(if ($config.ports.memcore) { $config.ports.memcore } else { 57912 }); app = 'memcore' },
     @{ name = '索引库 health'; url = ('http://127.0.0.1:' + $config.ports.codevault + '/api/health'); port = $config.ports.codevault; app = 'codevault' },
     @{ name = '索引库 repos'; url = ('http://127.0.0.1:' + $config.ports.codevault + '/api/repos'); port = $config.ports.codevault; app = '' },
     @{ name = '索引库 scripts'; url = ('http://127.0.0.1:' + $config.ports.codevault + '/api/scripts'); port = $config.ports.codevault; app = '' },

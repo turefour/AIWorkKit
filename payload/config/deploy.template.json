@@ -7,9 +7,10 @@
     "codevault": 57910,
     "eco": 57821,
     "tuner": 57822,
-    "errvault": 57911
+    "errvault": 57911,
+    "memcore": 57912
   },
-  "apps": ["codevault", "eco", "tuner", "errvault"],
+  "apps": ["codevault", "eco", "tuner", "errvault", "memcore"],
   "paths": {
     "workspace": "%USERPROFILE%\\AIWorkKit",
     "codeRoots": ["%USERPROFILE%\\AIWorkKit", "%USERPROFILE%\\Desktop"],

@@ -20,6 +20,7 @@ param(
   [int]$EcoPort = 57821,
   [int]$TunerPort = 57822,
   [int]$ErrvaultPort = 57911,
+  [int]$MemcorePort = 57912,
   [switch]$Lan,
   [switch]$NoDesktop,
   [switch]$NoRules,
@@ -206,26 +207,41 @@ if ((Test-Path $configFile) -and -not $ResetConfig) {
   Say '  [keep] config\deploy.json 已存在，保留原配置（-ResetConfig 可覆盖）' 'DarkYellow'
   $config = Get-Content $configFile -Raw -Encoding UTF8 | ConvertFrom-Json
   $oldVersion = [string]$config.version
+  $configDirty = $false
+  # 升级补齐：旧 deploy.json 没有新服务的端口/清单时补上，否则 launch 拿到 undefined
+  if (-not $config.ports.PSObject.Properties['memcore']) {
+    $config.ports | Add-Member -NotePropertyName memcore -NotePropertyValue $MemcorePort -Force
+    $configDirty = $true
+    Say ("  [add]  ports.memcore = {0}" -f $MemcorePort) 'Green'
+  }
+  if (@($config.apps) -notcontains 'memcore') {
+    $config.apps = @(@($config.apps) + 'memcore')
+    $configDirty = $true
+    Say '  [add]  apps += memcore' 'Green'
+  }
   # 升级场景：端口/监听地址沿用，版本号与部署时间更新为新包
   if ($oldVersion -ne $PackageVersion) {
     $config.version = $PackageVersion
     $config.deployedAt = (Get-Date).ToString('yyyy-MM-ddTHH:mm:ssK')
+    $configDirty = $true
+    Say ("  [up]   {0} -> {1}" -f $oldVersion, $PackageVersion) 'Green'
+  }
+  if ($configDirty) {
     [System.IO.File]::WriteAllText(
       $configFile,
       ($config | ConvertTo-Json -Depth 5),
       (New-Object System.Text.UTF8Encoding $false)
     )
-    Say ("  [up]   {0} -> {1}" -f $oldVersion, $PackageVersion) 'Green'
   }
 } else {
   $config = [pscustomobject]@{
     version    = $PackageVersion
     host       = $(if ($Lan) { '0.0.0.0' } else { '127.0.0.1' })
     lan        = [bool]$Lan
-    ports      = [pscustomobject]@{ codevault = $Port; eco = $EcoPort; tuner = $TunerPort; errvault = $ErrvaultPort }
+    ports      = [pscustomobject]@{ codevault = $Port; eco = $EcoPort; tuner = $TunerPort; errvault = $ErrvaultPort; memcore = $MemcorePort }
     # scriptvault 不是常驻 Web 服务（只是脚本库，经索引页访问），不要列进启动清单，
     # 否则 launch.mjs 会因为不认识它而静默忽略，配置与行为对不上。
-    apps       = @('codevault', 'eco', 'tuner', 'errvault')
+    apps       = @('codevault', 'eco', 'tuner', 'errvault', 'memcore')
     # 路径全部相对当前用户推导：换用户名 / 换盘符时只改这里，不动代码
     paths      = [pscustomobject]@{
                    workspace = (Join-Path $env:USERPROFILE 'AIWorkKit')
@@ -248,7 +264,7 @@ if ((Test-Path $configFile) -and -not $ResetConfig) {
     ($config | ConvertTo-Json -Depth 5),
     (New-Object System.Text.UTF8Encoding $false)
   )
-  Say ("  [ok]   config\deploy.json（端口 {0}/{1}/{2}/{3}，监听 {4}）" -f $Port, $EcoPort, $TunerPort, $ErrvaultPort, $config.host) 'Green'
+  Say ("  [ok]   config\deploy.json（端口 {0}/{1}/{2}/{3}/{4}，监听 {5}）" -f $Port, $EcoPort, $TunerPort, $ErrvaultPort, $MemcorePort, $config.host) 'Green'
 }
 
 # 仓库清单里先登记本套件自身：否则「仓库与备份」页面是空的，用户不知道能加什么
@@ -378,6 +394,7 @@ if (-not $NoRules) {
       '-PortEco', [string]$config.ports.eco,
       '-PortTuner', [string]$config.ports.tuner,
   '-PortErrvault', [string]$config.ports.errvault,
+      '-PortMemcore', [string]$config.ports.memcore,
       '-BindAddress', [string]$config.host,
       '-Platforms', $Platforms
     )

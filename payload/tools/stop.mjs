@@ -34,7 +34,9 @@ const APP_PORTS = {
   codevault: (cfg) => cfg.ports.codevault,
   eco: (cfg) => cfg.ports.eco,
   tuner: (cfg) => cfg.ports.tuner,
-  errvault: (cfg) => cfg.ports.errvault
+  errvault: (cfg) => cfg.ports.errvault,
+  // 与 launch.mjs 用同一个兜底端口
+  memcore: (cfg) => Number(cfg.ports.memcore) || 57912
 };
 
 const FORCE = process.argv.includes('--force');

@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>记忆库 · memcore</title>
+<style>
+  :root {
+    --bg: #0e1116;
+    --panel: #151b23;
+    --panel2: #1b232d;
+    --line: #263140;
+    --text: #dfe7f1;
+    --dim: #8794a5;
+    --accent: #5ec8a8;
+    --warn: #e0b354;
+    --bad: #e0736b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 14px/1.6 "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+  }
+  header {
+    position: sticky; top: 0; z-index: 5; background: rgba(14,17,22,.94);
+    border-bottom: 1px solid var(--line); padding: 12px 18px;
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    backdrop-filter: blur(6px);
+  }
+  h1 { font-size: 16px; margin: 0; font-weight: 600; letter-spacing: .3px; }
+  .sub { color: var(--dim); font-size: 12px; }
+  .spacer { flex: 1; }
+  button {
+    background: var(--panel2); color: var(--text); border: 1px solid var(--line);
+    border-radius: 6px; padding: 6px 11px; font-size: 13px; cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); color: var(--accent); }
+  button.primary { border-color: #2f6d5b; color: var(--accent); }
+  nav { display: flex; gap: 4px; padding: 10px 18px 0; }
+  nav a {
+    padding: 6px 12px; border-radius: 6px 6px 0 0; color: var(--dim);
+    text-decoration: none; font-size: 13px; border: 1px solid transparent; border-bottom: none;
+  }
+  nav a.on { color: var(--text); background: var(--panel); border-color: var(--line); }
+  main { padding: 0 18px 32px; }
+  section { display: none; }
+  section.on { display: block; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; margin-top: 12px; }
+  .stats { display: flex; gap: 18px; flex-wrap: wrap; color: var(--dim); font-size: 12px; }
+  .stats b { color: var(--text); font-weight: 600; font-size: 14px; }
+  pre {
+    white-space: pre-wrap; word-break: break-word; margin: 0;
+    font: 13px/1.65 "Cascadia Mono", Consolas, "Microsoft YaHei", monospace;
+  }
+  .md h2 { font-size: 14px; color: var(--accent); margin: 18px 0 6px; }
+  .md li { margin: 2px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--dim); font-weight: 500; font-size: 12px; }
+  code { background: #0b0f14; padding: 1px 5px; border-radius: 4px; color: #9fd3c0; font-size: 12px; }
+  input, select, textarea {
+    background: #0b0f14; color: var(--text); border: 1px solid var(--line);
+    border-radius: 6px; padding: 7px 9px; font: inherit;
+  }
+  input:focus, textarea:focus { outline: none; border-color: var(--accent); }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .grow { flex: 1; min-width: 220px; }
+  .tag { display: inline-block; font-size: 11px; padding: 1px 6px; border-radius: 999px; border: 1px solid var(--line); color: var(--dim); }
+  .tag.note { color: var(--accent); border-color: #2f6d5b; }
+  .tag.hit { color: var(--warn); border-color: #6d5a2f; }
+  .empty { color: var(--dim); padding: 18px 0; }
+  .graph-wrap {
+    position: relative; height: 520px; border: 1px solid var(--line); border-radius: 8px;
+    overflow: hidden;
+    background: radial-gradient(circle at 50% 45%, #18202a 0%, #0f1319 70%);
+  }
+  #g-canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+  #g-canvas.dragging { cursor: grabbing; }
+  #g-heat { display: block; width: 100%; }
+  .toast {
+    position: fixed; right: 18px; bottom: 18px; background: var(--panel2);
+    border: 1px solid var(--line); border-left: 3px solid var(--accent);
+    padding: 10px 14px; border-radius: 6px; font-size: 13px;
+    opacity: 0; transform: translateY(6px); transition: .18s; pointer-events: none;
+  }
+  .toast.on { opacity: 1; transform: none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>记忆库 · memcore</h1>
+  <span class="sub" id="home">—</span>
+  <span class="spacer"></span>
+  <button id="btn-sync">同步对话</button>
+  <button id="btn-build" class="primary">重建记忆</button>
+</header>
+
+<nav>
+  <a href="#memory" class="on" data-tab="memory">记忆正文</a>
+  <a href="#notes" data-tab="notes">条目</a>
+  <a href="#search" data-tab="search">检索</a>
+  <a href="#graph" data-tab="graph">图谱</a>
+  <a href="#rule" data-tab="rule">常驻规则</a>
+  <a href="#about" data-tab="about">数据源</a>
+</nav>
+
+<main>
+  <div class="card"><div class="stats" id="stats">加载中…</div></div>
+
+  <section id="t-memory" class="on"><div class="card md" id="memory"></div></section>
+
+  <section id="t-notes">
+    <div class="card">
+      <div class="row" style="margin-bottom:10px">
+        <select id="f-type">
+          <option value="">全部类型</option>
+          <option>habit</option><option>preference</option><option>constraint</option>
+          <option>direction</option><option>decision</option><option>lesson</option>
+          <option>task-end</option><option>pointer</option>
+        </select>
+        <input id="f-q" class="grow" placeholder="按正文 / 标签过滤" />
+        <button id="btn-filter">过滤</button>
+      </div>
+      <table>
+        <thead><tr><th style="width:210px">id / 类型</th><th>正文</th><th style="width:80px">次数</th><th style="width:120px">更新</th></tr></thead>
+        <tbody id="note-rows"><tr><td colspan="4" class="empty">—</td></tr></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="row">
+        <select id="n-type">
+          <option>constraint</option><option>habit</option><option>preference</option>
+          <option>direction</option><option>decision</option><option>lesson</option>
+          <option>task-end</option><option>pointer</option>
+        </select>
+        <select id="n-scope">
+          <option>machine</option><option>suite</option><option>project</option>
+          <option>session</option><option>task</option>
+        </select>
+        <input id="n-tags" placeholder="标签 a,b" style="width:130px" />
+        <input id="n-text" class="grow" placeholder="一句话事实（≤200 字）。相似条目会自动合并计数" />
+        <button id="btn-note" class="primary">写入</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="t-search">
+    <div class="card">
+      <div class="row">
+        <input id="s-q" class="grow" placeholder="关键词：报错原文、项目名、任务标题…" />
+        <button id="btn-search" class="primary">检索</button>
+      </div>
+      <div id="s-out" class="empty">输入关键词后回车</div>
+    </div>
+  </section>
+
+  <section id="t-graph">
+    <div class="card">
+      <div class="row" style="margin-bottom:8px">
+        <span class="sub">节点：项目（金）／主题词（青）／会话（灰）／条目（按类型着色）　拖动节点、滚轮缩放、点击查看正文</span>
+        <span class="spacer"></span>
+        <button id="g-relayout">重新布局</button>
+      </div>
+      <div class="graph-wrap"><canvas id="g-canvas"></canvas></div>
+      <div id="g-info" class="sub" style="min-height:20px">—</div>
+    </div>
+    <div class="card">
+      <div class="row" style="margin-bottom:8px">
+        <b style="font-size:13px">近半年活跃度</b>
+        <span class="sub">每格一天：指令 + 条目写入</span>
+      </div>
+      <canvas id="g-heat" style="width:100%;height:104px"></canvas>
+    </div>
+  </section>
+
+  <section id="t-rule"><div class="card"><pre id="rule"></pre></div></section>
+
+  <section id="t-about">
+    <div class="card"><pre id="about"></pre></div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('on');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.classList.remove('on'), 2400);
+}
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
+/* MEMORY.md 是受控格式：只渲染 ## 标题与 - 列表，其余按段落输出 */
+function renderMarkdown(text) {
+  const out = [];
+  for (const raw of String(text || '').split('\n')) {
+    const line = raw.trimEnd();
+    if (line.startsWith('## ')) out.push('<h2>' + esc(line.slice(3)) + '</h2>');
+    else if (line.startsWith('# ')) out.push('<h2>' + esc(line.slice(2)) + '</h2>');
+    else if (line.startsWith('- ')) out.push('<li>' + inline(line.slice(2)) + '</li>');
+    else if (!line.trim()) out.push('');
+    else out.push('<p>' + inline(line) + '</p>');
+  }
+  let html = out.join('\n');
+  html = html.replace(/(?:<li>[\s\S]*?<\/li>\n?)+/g, (m) => '<ul>' + m + '</ul>');
+  html = html.replace(/\n{3,}/g, '\n\n');
+  return html || '<div class="empty">还没有记忆：点「同步对话」→「重建记忆」</div>';
+}
+
+function inline(s) {
+  return esc(s).replace(/`([^`]+)`/g, '<code>$1</code>');
+}
+
+async function jget(url) {
+  const res = await fetch(url, { headers: { accept: 'application/json' } });
+  return res.json();
+}
+
+async function jpost(url, body) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: body ? JSON.stringify(body) : '{}'
+  });
+  return res.json();
+}
+
+function paintStats(o) {
+  const s = o.stats || {};
+  $('home').textContent = o.home || '';
+  $('stats').innerHTML = [
+    ['会话', s.sessions], ['指令', s.messages], ['条目', s.notes],
+    ['store', ((s.storeBytes || 0) / 1024).toFixed(1) + ' KB'],
+    ['MEMORY', ((s.memoryBytes || 0) / 1024).toFixed(1) + ' KB'],
+    ['规则', ((s.ruleBytes || 0) / 1024).toFixed(1) + ' KB'],
+    ['更新', (s.updatedAt ? new Date(s.updatedAt).toLocaleString() : '—')]
+  ].map(([k, v]) => '<span>' + k + ' <b>' + esc(v == null ? '—' : v) + '</b></span>').join('');
+}
+
+async function loadOverview() {
+  const o = await jget('/api/overview');
+  paintStats(o);
+  $('memory').innerHTML = renderMarkdown(o.memory);
+  $('rule').textContent = o.rule || '（尚未生成）';
+  const src = o.sources || {};
+  $('about').textContent = [
+    '归档目录：' + (o.home || ''),
+    '',
+    '数据源：',
+    ...Object.entries(src).map(([k, v]) => '  ' + k.padEnd(14) + (v.ok ? '[可用]' : '[缺失]') + '  ' + (v.path || '')),
+    '',
+    '大小与保留：store ' + ((o.stats.storeBytes || 0) / 1024).toFixed(1) + ' KB，' +
+      'MEMORY ' + ((o.stats.memoryBytes || 0) / 1024).toFixed(1) + ' KB，' +
+      '规则 ' + ((o.stats.ruleBytes || 0) / 1024).toFixed(1) + ' KB',
+    '预算：MEMORY ' + ((o.budget && o.budget.memoryBudget) || '-') + ' B / 规则 ' +
+      ((o.budget && o.budget.tier1Budget) || '-') + ' B；保留 ' +
+      ((o.budget && o.budget.keepDays) || '-') + ' 天 / ' + ((o.budget && o.budget.keepMessages) || '-') + ' 条',
+    '',
+    '类型分布：' + Object.entries(o.stats.byType || {}).map(([k, v]) => k + '×' + v).join(' · '),
+    '范围分布：' + Object.entries(o.stats.byScope || {}).map(([k, v]) => k + '×' + v).join(' · ')
+  ].join('\n');
+  await loadNotes();
+}
+
+async function loadNotes() {
+  const type = $('f-type').value;
+  const q = $('f-q').value.trim();
+  const url = '/api/search?limit=100' + (q ? '&q=' + encodeURIComponent(q) : '');
+  const r = await jget(url);
+  const rows = (r.rows || []).filter((x) => x.kind === 'note' && (!type || x.type === type));
+  if (!rows.length) {
+    $('note-rows').innerHTML = '<tr><td colspan="4" class="empty">暂无条目</td></tr>';
+    return;
+  }
+  $('note-rows').innerHTML = rows.map((n) =>
+    '<tr><td><code>' + esc(n.id) + '</code><br><span class="tag note">' + esc(n.type) + '</span> ' +
+    '<span class="tag">' + esc(n.label) + '</span></td>' +
+    '<td>' + inline(n.text) + '</td>' +
+    '<td>' + (n.count || 1) + '</td>' +
+    '<td>' + esc(new Date(n.t).toLocaleDateString()) + '</td></tr>'
+  ).join('');
+}
+
+async function doSearch() {
+  const q = $('s-q').value.trim();
+  if (!q) return;
+  const r = await jget('/api/search?limit=60&q=' + encodeURIComponent(q));
+  if (!r.rows || !r.rows.length) {
+    $('s-out').className = 'empty';
+    $('s-out').textContent = '未命中：' + q;
+    return;
+  }
+  const kind = { note: '条目', message: '指令', session: '会话' };
+  $('s-out').className = '';
+  $('s-out').innerHTML = '<table><thead><tr><th style="width:110px">时间</th><th style="width:110px">来源</th><th>内容</th></tr></thead><tbody>' +
+    r.rows.map((x) => '<tr><td>' + esc(new Date(x.t).toLocaleDateString()) + '</td>' +
+      '<td><span class="tag ' + (x.kind === 'note' ? 'note' : 'hit') + '">' + esc(kind[x.kind] || x.kind) + '</span> ' +
+      esc(x.label || '') + '</td><td>' + inline(x.text) + '</td></tr>').join('') +
+    '</tbody></table>';
+}
+
+document.querySelectorAll('nav a').forEach((a) => {
+  a.addEventListener('click', (e) => {
+    e.preventDefault();
+    document.querySelectorAll('nav a').forEach((x) => x.classList.toggle('on', x === a));
+    document.querySelectorAll('section').forEach((s) => s.classList.toggle('on', s.id === 't-' + a.dataset.tab));
+    if (a.dataset.tab === 'graph' && !GV) loadGraph();
+  });
+});
+
+$('btn-sync').addEventListener('click', async () => {
+  toast('同步中…');
+  const r = await jpost('/api/sync');
+  toast(r.ok ? '同步完成：新增指令 ' + (r.sync && r.sync.added || 0) : '同步失败');
+  await loadOverview();
+});
+
+$('btn-build').addEventListener('click', async () => {
+  const r = await jpost('/api/build');
+  toast(r.ok ? '已重建 MEMORY.md 与规则' : (r.error || '重建失败'));
+  await loadOverview();
+});
+
+$('btn-note').addEventListener('click', async () => {
+  const text = $('n-text').value.trim();
+  if (!text) return toast('先写正文');
+  const r = await jpost('/api/note', {
+    type: $('n-type').value,
+    scope: $('n-scope').value,
+    tags: $('n-tags').value.split(',').map((s) => s.trim()).filter(Boolean),
+    text
+  });
+  if (!r.ok) return toast('写入失败：' + (r.error || ''));
+  $('n-text').value = '';
+  toast((r.isNew ? '已新增 ' : '已合并 ') + r.entry.id);
+  await loadOverview();
+});
+
+$('btn-filter').addEventListener('click', loadNotes);
+$('f-q').addEventListener('keydown', (e) => { if (e.key === 'Enter') loadNotes(); });
+$('btn-search').addEventListener('click', doSearch);
+$('s-q').addEventListener('keydown', (e) => { if (e.key === 'Enter') doSearch(); });
+
+/* --------------------- 可视化：记忆图谱 + 活跃度热力图 --------------------- */
+
+const TYPE_COLOR = {
+  constraint: '#e0736b', habit: '#5ec8a8', preference: '#7fb0e8', direction: '#e0b354',
+  decision: '#b79ae8', lesson: '#e0a06b', 'task-end': '#8fd6c0', pointer: '#9aa7b8'
+};
+
+let GV = null;
+const gCanvas = $('g-canvas');
+
+function nodeColor(n) {
+  if (n.kind === 'keyword') return '#5ec8a8';
+  if (n.kind === 'hub') return '#e0b354';
+  if (n.kind === 'session') return '#59657a';
+  return TYPE_COLOR[n.type] || '#9aa7b8';
+}
+
+/* 手写力导向：节点少（<200），O(n²) 足够，且不引任何第三方库 */
+function layout(g) {
+  const nodes = g.nodes;
+  const idx = new Map(nodes.map((n) => [n.id, n]));
+  const w = gCanvas.clientWidth || 900;
+  const h = gCanvas.clientHeight || 520;
+  const base = Math.min(w, h);
+
+  nodes.forEach((n, i) => {
+    const a = i * 2.399963;
+    const r = Math.sqrt(i + 1) * (base / 24);
+    n.x = w / 2 + Math.cos(a) * r;
+    n.y = h / 2 + Math.sin(a) * r;
+    n.vx = 0;
+    n.vy = 0;
+  });
+
+  const edges = g.links.map((l) => ({ a: idx.get(l.s), b: idx.get(l.t) })).filter((e) => e.a && e.b);
+  const steps = 360;
+  for (let it = 0; it < steps; it += 1) {
+    const cool = 1 - it / steps;
+    for (let i = 0; i < nodes.length; i += 1) {
+      const a = nodes[i];
+      for (let j = i + 1; j < nodes.length; j += 1) {
+        const b = nodes[j];
+        let dx = a.x - b.x;
+        let dy = a.y - b.y;
+        let d2 = dx * dx + dy * dy;
+        if (d2 < 1) { d2 = 1; dx = Math.random() - 0.5; dy = Math.random() - 0.5; }
+        const d = Math.sqrt(d2);
+        const f = (1500 * cool) / d2;
+        a.vx += (dx / d) * f; a.vy += (dy / d) * f;
+        b.vx -= (dx / d) * f; b.vy -= (dy / d) * f;
+      }
+    }
+    for (const e of edges) {
+      const dx = e.b.x - e.a.x;
+      const dy = e.b.y - e.a.y;
+      const d = Math.hypot(dx, dy) || 1;
+      const f = (d - 64) * 0.012 * cool;
+      e.a.vx += (dx / d) * f; e.a.vy += (dy / d) * f;
+      e.b.vx -= (dx / d) * f; e.b.vy -= (dy / d) * f;
+    }
+    for (const n of nodes) {
+      n.vx += (w / 2 - n.x) * 0.002;
+      n.vy += (h / 2 - n.y) * 0.002;
+      n.x += n.vx * 0.5;
+      n.y += n.vy * 0.5;
+      n.vx *= 0.82;
+      n.vy *= 0.82;
+      n.x = Math.max(20, Math.min(w - 20, n.x));
+      n.y = Math.max(20, Math.min(h - 20, n.y));
+    }
+  }
+  g.edges = edges;
+}
+
+function drawGraph() {
+  if (!GV) return;
+  const dpr = window.devicePixelRatio || 1;
+  const w = gCanvas.clientWidth;
+  const h = gCanvas.clientHeight;
+  gCanvas.width = Math.round(w * dpr);
+  gCanvas.height = Math.round(h * dpr);
+  const ctx = gCanvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+
+  const g = GV.g;
+  const s = GV.scale;
+  const cx = w / 2;
+  const cy = h / 2;
+  const X = (x) => cx + (x - cx) * s;
+  const Y = (y) => cy + (y - cy) * s;
+
+  ctx.strokeStyle = 'rgba(120,150,180,0.18)';
+  ctx.lineWidth = 1;
+  for (const e of g.edges || []) {
+    ctx.beginPath();
+    ctx.moveTo(X(e.a.x), Y(e.a.y));
+    ctx.lineTo(X(e.b.x), Y(e.b.y));
+    ctx.stroke();
+  }
+
+  for (const n of g.nodes) {
+    const r = Math.max(2.5, (n.size || 6) * 0.5 * s);
+    ctx.beginPath();
+    ctx.arc(X(n.x), Y(n.y), r, 0, Math.PI * 2);
+    ctx.fillStyle = nodeColor(n);
+    ctx.globalAlpha = n.kind === 'session' ? 0.75 : 0.92;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    if (GV.sel === n.id) {
+      ctx.strokeStyle = '#e6f4ef';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+  }
+
+  ctx.font = '11px "Microsoft YaHei", sans-serif';
+  for (const n of g.nodes) {
+    const show = n.kind === 'keyword' || n.kind === 'hub' || s > 1.5 || GV.sel === n.id || GV.hover === n.id;
+    if (!show) continue;
+    const text = n.label;
+    ctx.fillStyle = n.kind === 'keyword' ? '#9fe0cb' : n.kind === 'hub' ? '#e8cf9a' : '#c7d2e0';
+    ctx.textAlign = 'center';
+    ctx.fillText(text, X(n.x), Y(n.y) - Math.max(6, (n.size || 6) * 0.5 * s + 4));
+  }
+}
+
+function hitTest(mx, my) {
+  if (!GV) return null;
+  const w = gCanvas.clientWidth;
+  const h = gCanvas.clientHeight;
+  const cx = w / 2;
+  const cy = h / 2;
+  const s = GV.scale;
+  let best = null;
+  let bestD = 1e9;
+  for (const n of GV.g.nodes) {
+    const nx = cx + (n.x - cx) * s;
+    const ny = cy + (n.y - cy) * s;
+    const r = Math.max(4, (n.size || 6) * 0.5 * s) + 4;
+    const d = Math.hypot(mx - nx, my - ny);
+    if (d < r && d < bestD) { bestD = d; best = n; }
+  }
+  return best;
+}
+
+function drawHeat(timeline) {
+  const c = $('g-heat');
+  const dpr = window.devicePixelRatio || 1;
+  const w = c.clientWidth || 800;
+  const h = 104;
+  c.width = Math.round(w * dpr);
+  c.height = Math.round(h * dpr);
+  const ctx = c.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+
+  const rows = 7;
+  const cols = Math.ceil(timeline.length / rows);
+  const cell = Math.max(3, Math.min(15, (w - 20) / cols - 3));
+  const gap = 3;
+  const max = Math.max(1, ...timeline.map((d) => d.messages + d.notes));
+
+  ctx.font = '10px "Microsoft YaHei", sans-serif';
+  ctx.fillStyle = '#8794a5';
+  ctx.fillText('少', 8, h - 4);
+  ctx.fillText('多', 8 + 4 * (cell + gap) + 12, h - 4);
+
+  timeline.forEach((d, i) => {
+    const col = Math.floor(i / rows);
+    const row = i % rows;
+    const v = d.messages + d.notes;
+    const x = 8 + col * (cell + gap);
+    const y = 8 + row * (cell + gap);
+    ctx.fillStyle = v
+      ? 'rgba(94,200,168,' + (0.18 + 0.82 * Math.min(1, v / max)).toFixed(3) + ')'
+      : '#1b232d';
+    ctx.fillRect(x, y, cell, cell);
+  });
+}
+
+async function loadGraph() {
+  try {
+    const g = await jget('/api/graph');
+    GV = { g, scale: 1, sel: null, hover: null };
+    layout(g);
+    drawGraph();
+    drawHeat(g.timeline);
+    $('g-info').textContent = '节点 ' + g.nodes.length + ' · 连接 ' + g.links.length + ' · 共 ' + g.timeline.length + ' 天活跃度';
+  } catch (e) {
+    toast('图谱加载失败：' + e.message);
+  }
+}
+
+gCanvas.addEventListener('mousemove', (ev) => {
+  const rect = gCanvas.getBoundingClientRect();
+  const mx = ev.clientX - rect.left;
+  const my = ev.clientY - rect.top;
+  if (GV && GV.drag) {
+    const w = gCanvas.clientWidth;
+    const h = gCanvas.clientHeight;
+    const cx = w / 2;
+    const cy = h / 2;
+    GV.drag.x = cx + (mx - cx) / GV.scale;
+    GV.drag.y = cy + (my - cy) / GV.scale;
+    drawGraph();
+    return;
+  }
+  const hit = hitTest(mx, my);
+  const id = hit ? hit.id : null;
+  if (GV && GV.hover !== id) { GV.hover = id; drawGraph(); }
+  gCanvas.style.cursor = hit ? 'pointer' : 'grab';
+});
+
+gCanvas.addEventListener('mousedown', (ev) => {
+  const rect = gCanvas.getBoundingClientRect();
+  const hit = hitTest(ev.clientX - rect.left, ev.clientY - rect.top);
+  if (hit && GV) { GV.drag = hit; gCanvas.classList.add('dragging'); }
+});
+
+window.addEventListener('mouseup', () => {
+  if (GV && GV.drag) { GV.drag = null; gCanvas.classList.remove('dragging'); drawGraph(); }
+});
+
+gCanvas.addEventListener('wheel', (ev) => {
+  if (!GV) return;
+  ev.preventDefault();
+  GV.scale = Math.max(0.4, Math.min(3, GV.scale * (ev.deltaY < 0 ? 1.12 : 0.89)));
+  drawGraph();
+}, { passive: false });
+
+gCanvas.addEventListener('click', (ev) => {
+  const rect = gCanvas.getBoundingClientRect();
+  const hit = hitTest(ev.clientX - rect.left, ev.clientY - rect.top);
+  if (!GV) return;
+  GV.sel = hit ? hit.id : null;
+  drawGraph();
+  if (!hit) { $('g-info').textContent = '—'; return; }
+  const kind = { keyword: '主题词', session: '会话', note: '条目' }[hit.kind] || hit.kind;
+  const meta = hit.kind === 'note'
+    ? ' · ' + hit.type + '/' + hit.scope + (hit.count > 1 ? ' ×' + hit.count : '')
+    : (hit.at ? ' · ' + new Date(hit.at).toLocaleDateString() : '');
+  $('g-info').textContent = '[' + kind + meta + '] ' + (hit.text || hit.label);
+});
+
+$('g-relayout').addEventListener('click', () => {
+  if (!GV) return loadGraph();
+  layout(GV.g);
+  drawGraph();
+  toast('已重新布局');
+});
+
+window.addEventListener('resize', () => { if (GV) { drawGraph(); drawHeat(GV.g.timeline); } });
+
+loadOverview().catch((e) => toast('加载失败：' + e.message));
+</script>
+</body>
+</html>

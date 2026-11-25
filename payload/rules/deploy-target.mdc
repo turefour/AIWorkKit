@@ -17,6 +17,7 @@ alwaysApply: true
 | 进度看板 Eco | `http://127.0.0.1:__PORT_ECO__/` |
 | 降温面板 Tuner | `http://127.0.0.1:__PORT_TUNER__/` |
 | **报错库 errvault** | `http://127.0.0.1:__PORT_ERRVAULT__/` |
+| **记忆库 memcore**（所有任务的统一记忆归档） | `http://127.0.0.1:__PORT_MEMCORE__/` ｜ 数据在 `__TARGET__\memory\` |
 | 监听地址 | `__HOST__` |
 
 启动与停止（不要手敲 node 命令）：
@@ -190,6 +191,74 @@ CLI 用 `logs --tail N`。同一个关键词 10 秒内只记一行，避免搜�
 3. **记录不完整可以覆盖** —— 用同一段 `--symptom` 再 `add` 一次，会把旧记录合并（`id` 不变）
 4. **不要把密钥 / token 写进记录**，脱敏后再贴
 
+## 2.2 记忆库 memcore（所有任务的统一记忆归档）
+
+**位置（唯一真相源，不要另建记忆文件）**
+
+| 内容 | 路径 |
+|---|---|
+| 原始事件（会话 + 用户指令） | `__TARGET__\memory\store.json` |
+| 完整记忆（按需读） | `__TARGET__\memory\MEMORY.md` |
+| 常驻规则（自动注入） | `__TARGET__\memory\memcore.mdc` → `~\.codebuddy\rules\memcore.mdc` |
+| 条目审计镜像 | `__TARGET__\memory\archive\notes-YYYYMM.jsonl` |
+| 运行日志 | `__TARGET__\memory\logs\memcore-YYYYMM.log` |
+
+`memory\` 在套件根目录、不在 `apps\` 下，所以重新部署只换代码、不动记忆。
+
+### 什么时候读
+
+| 触发 | 动作 |
+|---|---|
+| 任务开始且涉及历史/偏好 | `memcore show`（完整记忆），或直接看已注入的 `memcore.mdc` |
+| 用户问“以前怎么做的/上次定过什么” | `memcore search <关键词>`（条目 + 指令 + 会话标题一起搜） |
+| 服务是否在跑 | `GET http://127.0.0.1:__PORT_MEMCORE__/api/health`（`app=memcore`） |
+
+```powershell
+& "__TARGET__\runtime\node.exe" "__TARGET__\tools\memcore.mjs" show
+& "__TARGET__\runtime\node.exe" "__TARGET__\tools\memcore.mjs" search "关键词"
+```
+
+### 什么时候写（判定标准）
+
+| 类型 | 收什么 | 判定标准 |
+|---|---|---|
+| `constraint` | 红线 / 必须遵守 | 用户明确说“必须/不要/禁止/一律”，且换成别的项目依然成立 |
+| `habit` | 做事方式 | 跨 ≥2 个项目重复出现，或用户说“以后/每次/默认” |
+| `preference` | 风格 / 语言 / 格式 | 长期有效，不是这一次的排版要求 |
+| `direction` | 任务方向 | 一条任务线的目标，来自会话标题或首条指令 |
+| `decision` | 选型定稿 | 有理由、有被否方案；改主意时要更新同一条 |
+| `lesson` | 踩坑结论 | 正文只写一句可用结论，细节记 errvault |
+| `task-end` | 收尾摘要 | 目标 / 产出 / 验证 / 未完成，四要素压进 ≤200 字 |
+| `pointer` | 外部索引 | 指向 CodeVault 项目、errvault 条目、脚本库文件 |
+
+**不纳入**：助手自己的输出、大段代码或日志、密钥 / token / 个人隐私、一次性业务数据、
+超过 200 字的正文（改存文件 + `pointer`）。
+
+```powershell
+# 写入（同义正文会自动合并计数，id 不变）
+& "__TARGET__\runtime\node.exe" "__TARGET__\tools\memcore.mjs" note add `
+  --type task-end --scope task --text "目标…；产出…；验证…；未完…" --tags "项目名"
+# 查询 / 删除
+& "__TARGET__\runtime\node.exe" "__TARGET__\tools\memcore.mjs" note list --limit 20
+& "__TARGET__\runtime\node.exe" "__TARGET__\tools\memcore.mjs" note del <id>
+```
+
+### 更新与刷新
+
+1. 对话结束后：`memcore` 自动抽取的习惯随 `memcore.mjs`（默认 sync + build）刷新；
+2. 手工条目写完会自动 `build`，`MEMORY.md` 与 `memcore.mdc` 同步更新；
+3. 规则要立刻进上下文：`memcore.mjs install`（写 `~\.codebuddy\rules\memcore.mdc`）；
+4. 长期不用的记忆：`memcore.mjs prune` 按 `config\memcore.json` 的天数/条数裁剪。
+
+### 硬性要求
+
+1. **不要在项目目录里另建 `memory.md` / `MEMORY.md`** —— 统一写进本归档；
+2. 正文 ≤200 字，写“结论”，不写过程；
+3. 与 errvault 分工：**报错与解法归 errvault，习惯与方向归 memcore**，交叉内容只留一句 + 指针；
+4. 写完确认 `memcore.mjs stats` 中条目数与 `MEMORY.md` 体积都在预算内（6KB / 1.2KB）。
+
+---
+
 ## 3. 版本管理（任务收尾必做）
 
 改了文件且验证通过后：

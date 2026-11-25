@@ -2,15 +2,32 @@
   "version": "2.0.0",
   "host": "127.0.0.1",
   "lan": false,
-  "ports": { "codevault": 57910, "eco": 57821, "tuner": 57822, "errvault": 57911 },
-  "apps": ["codevault", "eco", "tuner", "errvault"],
+  "ports": {
+    "codevault": 57910,
+    "eco": 57821,
+    "tuner": 57822,
+    "errvault": 57911,
+    "memcore": 57912
+  },
+  "apps": [
+    "codevault",
+    "eco",
+    "tuner",
+    "errvault",
+    "memcore"
+  ],
   "paths": {
     "workspace": "E:\\AIWorkKit\\workspace",
-    "codeRoots": ["E:\\AIWorkKit", "E:\\tmp"],
+    "codeRoots": [
+      "E:\\AIWorkKit",
+      "E:\\tmp"
+    ],
     "scriptDir": "E:\\AIWorkKit\\scripts",
     "vaultRoot": "E:\\AIWorkKit\\scriptvault"
   },
-  "rules": ["deploy-target.mdc"],
+  "rules": [
+    "deploy-target.mdc"
+  ],
   "runtime": "E:\\AIWorkKit\\payload\\runtime",
   "target": "E:\\AIWorkKit",
   "deployedAt": ""

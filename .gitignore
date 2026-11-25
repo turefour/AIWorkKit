@@ -29,3 +29,6 @@ coverage/
 
 # 打包用的便携运行时（node / mingit），体积大且可重新获取
 .tools/
+
+# memcore 归档：运行期数据，按机器生成，不入库
+payload/memory/

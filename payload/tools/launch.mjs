@@ -58,6 +58,15 @@ const APPS = {
     port: (cfg) => cfg.ports.errvault,
     env: (cfg) => ({ ERRVAULT_HOST: cfg.host }),
     open: false
+  },
+  memcore: {
+    label: '记忆库 memcore',
+    entry: path.join('apps', 'memcore', 'server.mjs'),
+    // 旧 deploy.json 没有 memcore 键：必须有兜底，否则端口是 undefined
+    port: (cfg) => Number(cfg.ports.memcore) || 57912,
+    args: (cfg) => ['--port', String(Number(cfg.ports.memcore) || 57912)],
+    env: (cfg) => ({ MEMCORE_HOST: cfg.host }),
+    open: false
   }
 };
 

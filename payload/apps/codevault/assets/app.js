@@ -15,6 +15,14 @@ const STATUS_TEXT = {
 
 /* Live dashboards served by the plugins; embedded as full-height frames. */
 const EMBEDS = {
+  __memcore__: {
+    app: 'memcore',
+    name: '记忆库 · memcore',
+    sub: '用户习惯 · 任务方向 · 统一归档',
+    url: 'http://127.0.0.1:57912/',
+    desc: '所有任务的记忆统一归档到套件根目录 memory\\：自动抽取习惯与任务方向，人工条目录入决策/约束/收尾摘要，并生成每会话注入的 memcore.mdc；图谱页可看项目—主题—会话结构与半年活跃度。',
+    hint: 'node apps/memcore/server.mjs --port 57912'
+  },
   __eco__: {
     app: 'eco',
     name: '实时看板 · Eco',

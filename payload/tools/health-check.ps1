@@ -65,6 +65,8 @@ if (Test-Path $configFile) {
 $portCodevault = if ($config -and $config.ports) { [int]$config.ports.codevault } else { 57910 }
 $portEco = if ($config -and $config.ports) { [int]$config.ports.eco } else { 57821 }
 $portTuner = if ($config -and $config.ports) { [int]$config.ports.tuner } else { 57822 }
+# 旧配置可能没有 memcore 键：与 launch / stop 用同一个兜底端口
+$portMemcore = if ($config -and $config.ports -and $config.ports.memcore) { [int]$config.ports.memcore } else { 57912 }
 
 # ---------------------------------------------------------------- 一、文件完整性
 $required = @(
@@ -81,7 +83,11 @@ $required = @(
   @{ rel = 'apps\tuner\web\index.html'; label = '降温页面' },
   @{ rel = 'apps\scriptvault\build-index.mjs'; label = '脚本库索引' },
   @{ rel = 'apps\scriptvault\tools\adopt-project.mjs'; label = '项目接入工具' },
-  @{ rel = 'apps\scriptvault\config\repos.json'; label = '仓库清单' }
+  @{ rel = 'apps\scriptvault\config\repos.json'; label = '仓库清单' },
+  @{ rel = 'apps\memcore\server.mjs'; label = '记忆库服务' },
+  @{ rel = 'apps\memcore\lib\api.mjs'; label = '记忆库逻辑' },
+  @{ rel = 'apps\memcore\web\index.html'; label = '记忆库页面' },
+  @{ rel = 'tools\memcore.mjs'; label = '记忆库命令行' }
 )
 
 $missing = 0
@@ -174,9 +180,13 @@ if ($okEco) {
   $null = Test-Endpoint -Url ("http://127.0.0.1:" + $portEco + "/api/guard") -Label '重复进程守护接口' -NeedJson
 }
 $okTuner = Test-Endpoint -Url ("http://127.0.0.1:" + $portTuner + "/api/health") -Label '降温服务'
+$okMemcore = Test-Endpoint -Url ("http://127.0.0.1:" + $portMemcore + "/api/health") -Label '记忆库服务'
+if ($okMemcore) {
+  $null = Test-Endpoint -Url ("http://127.0.0.1:" + $portMemcore + "/api/graph") -Label '记忆库图谱接口' -NeedJson
+}
 
 # 端口监听是否与配置一致
-foreach ($pair in @(@{ p = $portCodevault; n = '索引库' }, @{ p = $portEco; n = '看板' }, @{ p = $portTuner; n = '降温' })) {
+foreach ($pair in @(@{ p = $portCodevault; n = '索引库' }, @{ p = $portEco; n = '看板' }, @{ p = $portTuner; n = '降温' }, @{ p = $portMemcore; n = '记忆库' })) {
   $listen = Get-NetTCPConnection -LocalPort $pair.p -State Listen -ErrorAction SilentlyContinue
   if ($listen) {
     Add-Result '功能' ($pair.n + '端口监听') 'pass' ("端口 " + $pair.p)
@@ -266,7 +276,7 @@ if ($Json) {
   [pscustomobject]@{
     ok       = ($fail -eq 0)
     target   = $Target
-    ports    = @{ codevault = $portCodevault; eco = $portEco; tuner = $portTuner }
+    ports    = @{ codevault = $portCodevault; eco = $portEco; tuner = $portTuner; memcore = $portMemcore }
     pass     = $pass
     fail     = $fail
     warn     = $warn
