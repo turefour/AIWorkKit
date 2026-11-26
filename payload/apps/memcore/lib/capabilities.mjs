@@ -325,21 +325,29 @@ function scanServices() {
     const name = names.get(pid) || '';
     // 系统保留端口（135/139/445/496xx 等）对能力判断没意义
     if (port < 1000 || port >= 49000) continue;
-    if (/^(svchost|System|lsass|spoolsv|services)$/i.test(name)) continue;
+    // tasklist 给的是 svchost.exe 这种带后缀的名字，锚点要允许 .exe
+    if (/^(svchost|system|lsass|spoolsv|services|dwm|wininit|winlogon|smss|csrss)(\.exe)?$/i.test(name)) continue;
     const key = port + ':' + pid;
     if (seen.has(key)) continue;
     seen.add(key);
+    // web：能对外发页面的端口，与 QQ/微信那种本地 RPC 端口区分开
+    const isWeb =
+      /node|python|nginx|httpd|apache|java|dotnet/i.test(name) ||
+      [57910, 57821, 57822, 57911, 57912, 3000, 5173, 8080].includes(port);
+
     out.push({
       port,
       pid,
       name: name || '未知进程',
+      web: isWeb,
       use: /node/i.test(name) ? '本地服务 / 网页发布'
         : /python/i.test(name) ? '本地服务'
         : /nginx|httpd|apache/i.test(name) ? 'Web 服务器'
         : ''
     });
   }
-  return out.sort((a, b) => a.port - b.port);
+  // 网页服务排前面，其余按端口升序
+  return out.sort((a, b) => Number(b.web) - Number(a.web) || a.port - b.port);
 }
 
 /* ------------------------------------------------------------ 5. 浏览器扩展 */

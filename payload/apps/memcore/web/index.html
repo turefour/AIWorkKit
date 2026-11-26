@@ -389,7 +389,7 @@ function renderCapabilities(d) {
       '运行中的本地服务（' + svc.length + ' 个监听端口）',
       svc
         .slice(0, 40)
-        .map((p) => capsChip(':' + p.port, esc(p.name) + (p.use ? ' · ' + esc(p.use) : '')))
+        .map((p) => capsChip(':' + p.port, esc(p.name) + (p.web ? ' · 网页服务' : '') + (p.use ? ' · ' + esc(p.use) : '')))
         .join('')
     );
   }
