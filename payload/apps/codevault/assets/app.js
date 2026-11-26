@@ -220,7 +220,11 @@ function renderList() {
   box.appendChild(head);
 
   if (!list.length) {
-    box.appendChild(el('div', 'empty-state', '没有匹配的项目'));
+    // 区分「筛选无结果」和「索引本身是空的」：后者要引导登记，而不是让人去改筛选条件
+    const msg = (state.data.projects || []).length
+      ? '没有匹配的项目'
+      : '索引为空 · 运行 adopt-project 登记项目后刷新';
+    box.appendChild(el('div', 'empty-state', msg));
     return;
   }
 
@@ -308,6 +312,10 @@ function renderDetail() {
   box.innerHTML = '';
   box.classList.remove('embed');
 
+  if (state.current === '__empty__') {
+    renderEmptyIndex(box);
+    return;
+  }
   if (state.current === '__roadmap__') {
     renderRoadmap(box);
     return;
@@ -754,16 +762,37 @@ async function probeLive() {
 async function boot() {
   bindTools();
   await probeLive();
+
+  let data = null;
   try {
     const res = await fetch('data/projects.json', { cache: 'no-store' });
-    state.data = await res.json();
+    data = await res.json();
   } catch (err) {
     $('#detail').innerHTML =
       '<div class="empty-state">无法读取 data/projects.json。<br>' +
-      '浏览器直接打开 file:// 页面会因同源策略失败，请运行 <b>start.cmd</b> 用本地服务打开。</div>';
+      '浏览器直接打开 file:// 页面会因同源策略失败，请通过本地服务打开（http://127.0.0.1:57910/）。</div>';
     return;
   }
+
+  /*
+   * 索引为空或结构不对时，在这里就停下并给出提示。
+   *
+   * 原来直接写 state.data.projects[0].id —— 空索引时 projects[0] 是 undefined，
+   * 抛 "Cannot read properties of undefined (reading 'id')"，boot() 从这里中断，
+   * 整页只剩空白，控制台一条看不懂的报错。而空索引是**正常状态**
+   * （新装、重新部署、跑过打包都会是空索引），界面应该告诉用户下一步做什么。
+   */
+  if (!data || typeof data !== 'object' || !Array.isArray(data.projects)) {
+    state.data = { projects: [], roadmap: [] };
+    $('#detail').innerHTML =
+      '<div class="empty-state">索引文件格式不对：data/projects.json 里没有 projects 数组。<br>' +
+      '请重新解压安装包，或运行 <b>adopt-project</b> 重新生成索引。</div>';
+    return;
+  }
+
+  state.data = data;
   renderStats();
+
   const hash = location.hash.replace(/^#/, '');
   const known =
     hash &&
@@ -771,10 +800,42 @@ async function boot() {
       EMBEDS[hash] ||
       VIEWS[hash] ||
       hash === '__roadmap__');
-  const first = known ? hash : state.data.projects[0].id;
-  state.current = first;
+
+  const first = state.data.projects[0];
+  // 空索引时落到引导页（__empty__），不要在这里崩
+  state.current = known ? hash : first ? first.id : '__empty__';
+
   renderList();
   renderDetail();
+}
+
+/** 空索引引导页：告诉用户下一步怎么做，而不是留一片空白 */
+function renderEmptyIndex(box) {
+  const wrap = el('div', 'empty-state');
+  wrap.style.textAlign = 'left';
+  wrap.style.lineHeight = '1.7';
+
+  const h = el('h2', null, '索引里还没有项目');
+  h.style.margin = '0 0 10px';
+  h.style.fontSize = '16px';
+  wrap.appendChild(h);
+
+  wrap.appendChild(
+    el('div', null, '新装或重新部署后索引是空的，需要把项目登记进来。在套件目录执行：')
+  );
+
+  const pre = document.createElement('pre');
+  pre.className = 'api-pre';
+  pre.style.margin = '10px 0';
+  pre.style.maxHeight = 'none';
+  pre.textContent =
+    'node payload\\apps\\scriptvault\\tools\\adopt-project.mjs "D:\\你的项目" ^\n' +
+    '  --name my-project --label "我的项目" --kind "全栈应用"';
+  wrap.appendChild(pre);
+
+  wrap.appendChild(el('div', 'muted', '登记会写入项目索引，刷新本页即可看到条目。'));
+
+  box.appendChild(wrap);
 }
 
 /* ---------------------------------------------------- 设置：降耗配置 + 接口目录 */
