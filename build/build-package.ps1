@@ -137,32 +137,15 @@ $PackageVersion = if (Test-Path $VersionFile) { (Get-Content $VersionFile -Raw -
 [System.IO.File]::WriteAllText($VersionFile, $PackageVersion + "`n", (New-Object System.Text.UTF8Encoding $false))
 Say ("  [ok]   VERSION = {0}" -f $PackageVersion) 'Green'
 
-# ------------------------------------------------------------------ 1c. 清空本机数据
+# ------------------------------------------------------------------ 1c. 私有数据
 # 分发包不能带自己的项目索引与仓库清单：目标机上这些路径不存在，索引页会显示
 # 一堆打不开的项目，也会把本机目录结构泄露出去。部署后由 adopt-project 重新登记。
+#
+# 注意：**只清 staging 里的那份**（见第 5 步）。
+# 早先的实现直接清 payload 源文件，于是「打完包自己的页面就空了」——
+# 打包这个动作把工作副本的数据一起抹掉，看起来像界面坏了。
 Say ''
-Say '  [1c/5] 清空本机私有数据' 'Cyan'
-
-$projectsFile = Join-Path $AppsDir 'codevault\data\projects.json'
-if (Test-Path $projectsFile) {
-  $empty = [pscustomobject]@{
-    generatedAt = (Get-Date).ToString('yyyy-MM-dd')
-    projects    = @()
-  }
-  [System.IO.File]::WriteAllText($projectsFile, ($empty | ConvertTo-Json -Depth 4), (New-Object System.Text.UTF8Encoding $false))
-  Say '  [ok]   codevault\data\projects.json -> 空索引（部署后用 adopt-project 登记）' 'Green'
-}
-
-$reposFile = Join-Path $AppsDir 'scriptvault\config\repos.json'
-if (Test-Path $reposFile) {
-  $empty = [pscustomobject]@{
-    '$comment'  = '仓库清单：部署后由 tools/adopt-project.mjs 登记'
-    updatedAt   = (Get-Date).ToString('yyyy-MM-dd')
-    repos       = @()
-  }
-  [System.IO.File]::WriteAllText($reposFile, ($empty | ConvertTo-Json -Depth 4), (New-Object System.Text.UTF8Encoding $false))
-  Say '  [ok]   scriptvault\config\repos.json -> 空清单（部署后用 adopt-project 登记）' 'Green'
-}
+Say '  [1c/5] 私有数据：打包时清 staging 副本，源目录保持不动' 'Cyan'
 
 # ------------------------------------------------------------------ 2. 运行时
 Say ''
@@ -288,6 +271,37 @@ New-Item -ItemType Directory -Force -Path $staging | Out-Null
 Copy-Item $exe (Join-Path $staging 'installer.exe') -Force
 Copy-Item $Payload (Join-Path $staging 'payload') -Recurse -Force
 Copy-Item (Join-Path $KitRoot 'README.txt') (Join-Path $staging 'README.txt') -Force -ErrorAction SilentlyContinue
+
+# 清 staging 里的私有数据（源目录不碰）。
+# 这三处路径在目标机上都不存在，带过去会让索引页显示一堆打不开的条目。
+$stageApps = Join-Path $staging 'payload\apps'
+$stageProjects = Join-Path $stageApps 'codevault\data\projects.json'
+if (Test-Path $stageProjects) {
+  $empty = [pscustomobject]@{
+    generatedAt = (Get-Date).ToString('yyyy-MM-dd')
+    projects    = @()
+  }
+  [System.IO.File]::WriteAllText($stageProjects, ($empty | ConvertTo-Json -Depth 4), (New-Object System.Text.UTF8Encoding $false))
+  Say '  [ok]   分发包内 codevault 索引 -> 空（源目录保持不动）' 'Green'
+}
+
+$stageRepos = Join-Path $stageApps 'scriptvault\config\repos.json'
+if (Test-Path $stageRepos) {
+  $empty = [pscustomobject]@{
+    '$comment' = '仓库清单：部署后由 tools/adopt-project.mjs 登记'
+    updatedAt  = (Get-Date).ToString('yyyy-MM-dd')
+    repos      = @()
+  }
+  [System.IO.File]::WriteAllText($stageRepos, ($empty | ConvertTo-Json -Depth 4), (New-Object System.Text.UTF8Encoding $false))
+  Say '  [ok]   分发包内仓库清单 -> 空（源目录保持不动）' 'Green'
+}
+
+$stageErr = Join-Path $stageApps 'errvault\data\index.json'
+if (Test-Path $stageErr) {
+  $empty = [pscustomobject]@{ version = 1; entries = @() }
+  [System.IO.File]::WriteAllText($stageErr, ($empty | ConvertTo-Json -Depth 4), (New-Object System.Text.UTF8Encoding $false))
+  Say '  [ok]   分发包内报错库 -> 空（源目录保持不动）' 'Green'
+}
 
 Compress-Archive -Path (Join-Path $staging '*') -DestinationPath $Out -CompressionLevel Optimal -Force
 Remove-Item $staging -Recurse -Force

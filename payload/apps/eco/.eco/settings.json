@@ -1,8 +1,0 @@
-{
-  "scanIntervalMs": 8000,
-  "cpuThreshold": 70,
-  "memThresholdMB": 2048,
-  "autoTrim": true,
-  "trimCooldownMs": 120000,
-  "ingestToken": ""
-}

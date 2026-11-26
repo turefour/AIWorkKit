@@ -32,3 +32,10 @@ coverage/
 
 # memcore 归档：运行期数据，按机器生成，不入库
 payload/memory/
+# 运行时数据与状态：按机器生成，不入库
+# （项目索引里有本机绝对路径，仓库清单里有本机目录，提交上去等于公开目录结构）
+payload/apps/*/data/*
+!payload/apps/*/data/**/.gitkeep
+payload/apps/*/config/repos.json
+payload/apps/*/.eco/
+payload/apps/*/logs/

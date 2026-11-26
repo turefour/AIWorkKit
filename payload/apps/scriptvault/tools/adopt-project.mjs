@@ -27,7 +27,14 @@ import { parseArgs, arg, usage } from '../lib/cli.mjs';
 import { findGit, loadRepoConfig, upsertRepo, saveRepoConfig } from '../lib/repo.mjs';
 
 const VAULT_ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const CODEVAULT = 'C:\\Users\\GH\\Desktop\\CodeVault';
+
+/*
+ * CodeVault 与 ScriptVault 是同级应用（apps/codevault、apps/scriptvault）。
+ * 这里原来写死成开发机的 C:\Users\GH\Desktop\CodeVault —— 结果在别处部署时，
+ * 登记「成功」但条目写进了开发目录，本套件的索引一直是空的，页面看起来像坏了。
+ * 用相对位置解析，装到哪台机器都指向自己的 CodeVault。
+ */
+const CODEVAULT = path.resolve(VAULT_ROOT, '..', 'codevault');
 const PROJECTS_FILE = path.join(CODEVAULT, 'data', 'projects.json');
 const SCAN = path.join(CODEVAULT, 'tools', 'scan.mjs');
 
