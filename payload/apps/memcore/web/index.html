@@ -97,7 +97,8 @@
 </header>
 
 <nav>
-  <a href="#memory" class="on" data-tab="memory">记忆正文</a>
+  <a href="#caps" class="on" data-tab="caps">能力清单</a>
+  <a href="#memory" data-tab="memory">记忆正文</a>
   <a href="#notes" data-tab="notes">条目</a>
   <a href="#search" data-tab="search">检索</a>
   <a href="#graph" data-tab="graph">图谱</a>
@@ -109,7 +110,18 @@
 <main>
   <div class="card"><div class="stats" id="stats">加载中…</div></div>
 
-  <section id="t-memory" class="on"><div class="card md" id="memory"></div></section>
+  <section id="t-caps" class="on">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div id="caps-summary" class="muted">扫描本机能力中…</div>
+        <button id="btn-caps-rescan" class="btn" type="button">重新扫描</button>
+      </div>
+      <div id="caps-list"></div>
+    </div>
+    <div class="card" id="caps-detail" style="margin-top:12px"></div>
+  </section>
+
+  <section id="t-memory"><div class="card md" id="memory"></div></section>
 
   <section id="t-notes"><span id="notes"></span>
     <div class="card">
@@ -251,6 +263,156 @@ function paintStats(o) {
   ].map(([k, v]) => '<span>' + k + ' <b>' + esc(v == null ? '—' : v) + '</b></span>').join('');
 }
 
+/* ============================================================
+ * 能力清单（首层）：这台机器现在能做什么
+ * ============================================================ */
+
+let CAPS = null;
+
+const CAP_AREA = [
+  ['文档', ['pdf', 'office', 'pageoffice']],
+  ['图形', ['cad', 'image']],
+  ['开发', ['web-publish', 'browser-auto', 'data', 'vcs', 'ai-coding']]
+];
+
+async function loadCapabilities(force) {
+  const sum = $('caps-summary');
+  if (sum) sum.textContent = force ? '重新扫描中（约 5 秒，会查注册表与 PATH）…' : '加载中…';
+  const r = await jget('/api/capabilities' + (force ? '?force=1' : ''));
+  CAPS = r;
+  renderCapabilities(r);
+}
+
+function capsChip(text, sub) {
+  return (
+    '<span style="display:inline-block;margin:0 8px 8px 0;padding:4px 10px;border-radius:8px;' +
+    'background:rgba(53,230,196,.10);border:1px solid rgba(53,230,196,.30);font-size:13px">' +
+    text +
+    (sub ? ' <span style="opacity:.6;font-size:11px">' + sub + '</span>' : '') +
+    '</span>'
+  );
+}
+
+function capsCard(c) {
+  const ev = (c.evidence || []).filter(Boolean).join(' · ');
+  return (
+    '<div style="border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--panel)">' +
+    '<div style="font-weight:600;margin-bottom:4px">' + esc(c.name) + '</div>' +
+    '<div style="font-size:12px;opacity:.75;line-height:1.5">' + esc(ev) + '</div>' +
+    (c.hint ? '<div style="font-size:11px;opacity:.5;margin-top:4px">' + esc(c.hint) + '</div>' : '') +
+    '</div>'
+  );
+}
+
+function renderCapabilities(d) {
+  const sum = $('caps-summary');
+  const list = $('caps-list');
+  const detail = $('caps-detail');
+  if (!sum || !list) return;
+
+  if (!d || !d.ok) {
+    sum.textContent = '扫描失败：' + ((d && d.error) || '未知错误');
+    return;
+  }
+
+  const s = d.summary || {};
+  const when = d.scannedAt ? new Date(d.scannedAt).toLocaleTimeString() : '—';
+  sum.innerHTML =
+    '能力 <b>' + (s.capabilities || 0) + '</b> 项 · 软件 ' + (s.apps || 0) +
+    ' · 命令行 ' + (s.cli || 0) + ' · 开发库 ' + ((s.pylibs || 0) + (s.nodelibs || 0)) +
+    ' · 运行服务 ' + (s.services || 0) + ' · 扩展 ' + (s.extensions || 0) +
+    ' <span style="opacity:.5">（' + when + ' · ' + (d.tookMs || 0) + ' ms' + (d.cached ? ' · 缓存' : '') + '）</span>';
+
+  const caps = d.capabilities || [];
+  const byId = {};
+  for (const c of caps) byId[c.id] = c;
+
+  let html = '';
+  for (const [area, ids] of CAP_AREA) {
+    const got = ids.map((id) => byId[id]).filter(Boolean);
+    if (!got.length) continue;
+    html +=
+      '<div style="margin:10px 0 6px;font-size:12px;letter-spacing:.06em;opacity:.55">' + area.toUpperCase() + '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px">' +
+      got.map(capsCard).join('') + '</div>';
+  }
+  const other = caps.filter((c) => !CAP_AREA.some((pair) => pair[1].includes(c.id)));
+  if (other.length) {
+    html +=
+      '<div style="margin:10px 0 6px;font-size:12px;letter-spacing:.06em;opacity:.55">其他</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px">' +
+      other.map(capsCard).join('') + '</div>';
+  }
+  list.innerHTML = html;
+
+  const sec = (title, body) =>
+    '<div style="margin-top:14px"><div style="font-size:12px;opacity:.55;margin-bottom:6px">' + title + '</div>' + body + '</div>';
+  let det = '';
+
+  const apps = d.apps || {};
+  const appCats = Object.keys(apps).sort((a, b) => apps[b].length - apps[a].length);
+  if (appCats.length) {
+    det += sec(
+      '已安装软件（按类别，共 ' + (s.apps || 0) + ' 个）',
+      appCats
+        .map(
+          (cat) =>
+            '<div style="margin:4px 0"><span style="opacity:.7">' + esc(cat) + '（' + apps[cat].length + '）：</span>' +
+            apps[cat].map((n) => capsChip(esc(n))).join('') + '</div>'
+        )
+        .join('')
+    );
+  }
+
+  const cli = d.cli || [];
+  if (cli.length) {
+    det += sec(
+      '命令行工具（' + cli.length + ' 个）',
+      cli.map((c) => capsChip(esc(c.name), esc(c.version || '') + (c.bundled ? ' · 套件自带' : ''))).join('')
+    );
+  }
+
+  const libs = d.libs || {};
+  if ((libs.python || []).length || (libs.node || []).length) {
+    det += sec(
+      '开发库',
+      '<div style="margin:4px 0"><span style="opacity:.7">Python：</span>' +
+        (libs.python || []).map((p) => capsChip(esc(p.name), esc(p.use || ''))).join('') + '</div>' +
+        '<div style="margin:4px 0"><span style="opacity:.7">Node：</span>' +
+        (libs.node || []).map((p) => capsChip(esc(p.name), esc(p.use || ''))).join('') + '</div>'
+    );
+  }
+
+  const svc = d.services || [];
+  if (svc.length) {
+    det += sec(
+      '运行中的本地服务（' + svc.length + ' 个监听端口）',
+      svc
+        .slice(0, 40)
+        .map((p) => capsChip(':' + p.port, esc(p.name) + (p.use ? ' · ' + esc(p.use) : '')))
+        .join('')
+    );
+  }
+
+  const ext = d.extensions || [];
+  if (ext.length) {
+    det += sec(
+      '浏览器扩展（' + ext.length + ' 个）',
+      ext.map((e) => capsChip(esc(e.name), esc(e.browser) + (e.version ? ' ' + esc(e.version) : ''))).join('')
+    );
+  }
+
+  const suite = d.suite || [];
+  if (suite.length) {
+    det += sec(
+      '本套件模块',
+      suite.map((m) => capsChip(esc(m.name), ':' + (m.port || '—') + ' · ' + (m.apis || 0) + ' 个接口')).join('')
+    );
+  }
+
+  if (detail) detail.innerHTML = det;
+}
+
 async function loadOverview() {
   const o = await jget('/api/overview');
   paintStats(o);
@@ -389,6 +551,7 @@ document.querySelectorAll('nav a').forEach((a) => {
     document.querySelectorAll('nav a').forEach((x) => x.classList.toggle('on', x === a));
     document.querySelectorAll('section').forEach((s) => s.classList.toggle('on', s.id === 't-' + a.dataset.tab));
     if (a.dataset.tab === 'graph' && !GV) loadGraph();
+    if (a.dataset.tab === 'caps' && !CAPS) loadCapabilities().catch(() => {});
   });
 });
 
@@ -719,6 +882,14 @@ if (hashTab) {
   if (link) link.click();
 }
 
+const capsRescan = $('btn-caps-rescan');
+if (capsRescan) {
+  capsRescan.addEventListener('click', () => {
+    loadCapabilities(true).catch((e) => toast('扫描失败：' + e.message));
+  });
+}
+
+loadCapabilities().catch((e) => toast('能力扫描失败：' + e.message));
 loadOverview().catch((e) => toast('加载失败：' + e.message));
 </script>
 </body>

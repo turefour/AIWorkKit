@@ -70,3 +70,34 @@ GET /api/overview    facts.byType / facts.bySource / sourceReport
 ```
 
 页面「分类记忆」页签按类型展示，「数据源」页签列出采集明细。
+## 首层能力清单
+
+记忆库第一页不是「说过什么」，而是「这台机器现在能做什么」。
+
+`lib/capabilities.mjs` 探测五类事实并映射成能力块：
+
+| 探测项 | 来源 | 耗时 |
+|---|---|---|
+| 已安装软件 | 注册表三处 Uninstall 键（64/32 位 + 当前用户） | ~0.4 s |
+| 命令行工具 | PATH 解析 + 常见安装位置兜底（含套件自带便携运行时） | ~3.5 s |
+| 开发库 | Python `importlib.find_spec` 一次进程；Node 全局包读目录 | ~0.3 s |
+| 运行中服务 | `netstat -ano` + `tasklist` 映射 PID | ~0.5 s |
+| 浏览器扩展 | Chrome / Edge 的 Extensions 目录 + manifest | ~0.01 s |
+
+能力块是「能力」而不是「软件名」，每条都带证据：
+
+```
+CAD 建模与出图        ← 已装 CAD 软件 + ezdxf（DXF 读写）
+PDF 文本与表格提取     ← PyMuPDF（fitz） + pdfplumber（表格）
+Office 文档生成        ← Office / WPS + openpyxl + docx + pptx
+本地网页发布           ← 有 Node/Python 服务在监听 + 本套件自带多个本地服务
+浏览器自动化           ← Playwright / agent-browser + 已装浏览器扩展
+版本控制与备份         ← Git（套件自带便携版） + GitHub CLI
+```
+
+实现上有两个坑值得记：
+
+1. **不能只查 PATH**：套件服务由启动器拉起，PATH 常被精简，这台机器连 Git 目录都不在 PATH 里，只能靠注册表/常见路径兜底
+2. **不能 `spawnSync('git')`**：Windows 上不带 `.exe` 解析不到；而 `shell:true` 每个命令起一次 cmd.exe，16 个工具要 7.5 秒还漏。自己扫 PATH + 绝对路径执行最快最准
+
+结果缓存到 `payload/memory/capabilities.json`（10 分钟），页面「重新扫描」按钮走 `?force=1`。

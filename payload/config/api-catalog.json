@@ -1019,6 +1019,62 @@
                                                               "ok":  true
                                                           },
                                              "curl":  "curl -X POST http://127.0.0.1:{port}/api/client-error"
+                                         },
+                                         {
+                                             "id":  "memcore.capabilities",
+                                             "name":  "本机能力清单（输出）",
+                                             "method":  "GET",
+                                             "path":  "/api/capabilities",
+                                             "desc":  "首层能力清单：已装软件、命令行工具、开发库、运行中服务、浏览器扩展，并映射成可读能力块。force=1 忽略 10 分钟缓存重扫。",
+                                             "request":  null,
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "scannedAt":  1795664000000,
+                                                              "tookMs":  4781,
+                                                              "summary":  {
+                                                                              "capabilities":  10,
+                                                                              "apps":  109,
+                                                                              "cli":  7,
+                                                                              "pylibs":  9,
+                                                                              "nodelibs":  6,
+                                                                              "services":  24,
+                                                                              "extensions":  4
+                                                                          },
+                                                              "capabilities":  [
+                                                                                   {
+                                                                                       "id":  "cad",
+                                                                                       "name":  "CAD 建模与出图",
+                                                                                       "evidence":  [
+                                                                                                        "已装 CAD 软件",
+                                                                                                        "ezdxf（DXF 读写）"
+                                                                                                    ]
+                                                                                   },
+                                                                                   {
+                                                                                       "id":  "pdf",
+                                                                                       "name":  "PDF 文本与表格提取",
+                                                                                       "evidence":  [
+                                                                                                        "PyMuPDF（fitz）",
+                                                                                                        "pdfplumber（表格）"
+                                                                                                    ]
+                                                                                   }
+                                                                               ],
+                                                              "cli":  [
+                                                                          {
+                                                                              "name":  "Git",
+                                                                              "version":  "2.56.1",
+                                                                              "bundled":  true,
+                                                                              "use":  "版本控制"
+                                                                          }
+                                                                      ],
+                                                              "services":  [
+                                                                               {
+                                                                                   "port":  57910,
+                                                                                   "name":  "node.exe",
+                                                                                   "use":  "本地服务 / 网页发布"
+                                                                               }
+                                                                           ]
+                                                          },
+                                             "curl":  "curl \"http://127.0.0.1:{port}/api/capabilities?force=1\""
                                          }
                                      ]
                    },

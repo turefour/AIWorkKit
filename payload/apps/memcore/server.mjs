@@ -47,7 +47,8 @@ import {
   removeNote,
   searchAll,
   sync,
-  sources
+  sources,
+  capabilities
 } from './lib/api.mjs';
 
 const HOST = process.env.MEMCORE_HOST || '127.0.0.1';
@@ -70,6 +71,12 @@ app.get('/api/health', (ctx) => {
   });
 });
 
+app.get('/api/capabilities', (ctx) => {
+  // 首层能力清单：force=1 忽略缓存重扫（装完新软件后点「重新扫描」）
+  const force = ctx.query.get('force') === '1';
+  const r = capabilities(force);
+  ctx.json(200, r);
+});
 app.get('/api/sources', (ctx) => {
   // 数据源健康：每个源读到多少条、耗时、失败原因
   ctx.json(200, sources());

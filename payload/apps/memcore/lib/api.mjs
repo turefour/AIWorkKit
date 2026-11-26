@@ -39,6 +39,7 @@ import {
 import { renderMemory, renderRule, estimate, fmtDate, fmtShort } from './render.mjs';
 import { loadMessages, loadProjects, loadSessions, sourceStatus, labelForCwd } from './sources.mjs';
 import { collect, sourceReport } from './collect.mjs';
+import { scanCapabilities } from './capabilities.mjs';
 import { classifyItems } from './classify.mjs';
 
 export const CLI_PATH = path.join(KIT_ROOT, 'tools', 'memcore.mjs');
@@ -115,6 +116,11 @@ export function sync() {
       '  total=' + after.sessions + '/' + after.messages + '/' + after.facts
   );
   return { ok: true, added, sessionsTouched, factsAdded, before, after, sources: collected.sources };
+}
+
+/** 本机能力清单（记忆库首层）；force=true 忽略缓存重扫 */
+export function capabilities(force) {
+  return scanCapabilities({ force: !!force });
 }
 
 /** 数据源健康快照：页面「数据源」区块与排查用 */
