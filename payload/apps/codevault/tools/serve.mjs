@@ -65,6 +65,7 @@ const MAX_BYTES = 512 * 1024;
 const ECO_PORT = Number(CFG_PORTS.eco || 57821);
 const TUNER_PORT = Number(CFG_PORTS.tuner || 57822);
 const ERRVAULT_PORT = Number(CFG_PORTS.errvault || 57911);
+const MEMCORE_PORT = Number(CFG_PORTS.memcore || 57912);
 
 const APPS = {
   eco: {
@@ -93,6 +94,15 @@ const APPS = {
     cli: path.join(KIT_ROOT, 'apps', 'errvault', 'server.mjs'),
     args: ['--port', String(ERRVAULT_PORT)],
     cwd: path.join(KIT_ROOT, 'apps', 'errvault')
+  },
+  memcore: {
+    label: 'AIWorkKit 记忆库',
+    health: 'http://127.0.0.1:' + MEMCORE_PORT + '/api/health',
+    url: 'http://127.0.0.1:' + MEMCORE_PORT + '/',
+    port: MEMCORE_PORT,
+    cli: path.join(KIT_ROOT, 'apps', 'memcore', 'server.mjs'),
+    args: ['--port', String(MEMCORE_PORT)],
+    cwd: path.join(KIT_ROOT, 'apps', 'memcore')
   }
 };
 

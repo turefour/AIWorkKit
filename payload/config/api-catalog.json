@@ -467,6 +467,164 @@
                                              "curl":  "curl -X POST http://127.0.0.1:{port}/api/launch -H \"content-type: application/json\" -d \"{\\\"app\\\":\\\"eco\\\"}\""
                                          }
                                      ]
+                   },
+                   {
+                       "id":  "memcore",
+                       "title":  "记忆库 · memcore",
+                       "port":  "memcore",
+                       "desc":  "记忆归档：自动抽取 + 人工条目录入，生成每会话注入的 memcore.mdc，图谱页看项目—主题—会话结构。",
+                       "endpoints":  [
+                                         {
+                                             "id":  "memcore.health",
+                                             "name":  "健康检查（输出）",
+                                             "method":  "GET",
+                                             "path":  "/api/health",
+                                             "desc":  "服务状态与记忆体量（会话数 / 消息数 / 人工条目数）。",
+                                             "request":  null,
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "app":  "memcore",
+                                                              "pid":  9424,
+                                                              "port":  57912,
+                                                              "sessions":  72,
+                                                              "messages":  225,
+                                                              "notes":  0
+                                                          },
+                                             "curl":  "curl http://127.0.0.1:{port}/api/health"
+                                         },
+                                         {
+                                             "id":  "memcore.stats",
+                                             "name":  "统计（输出）",
+                                             "method":  "GET",
+                                             "path":  "/api/stats",
+                                             "desc":  "按月统计的会话/消息数量，用于活跃度展示。",
+                                             "request":  null,
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "months":  [
+                                                                             {
+                                                                                 "month":  "2026-11",
+                                                                                 "sessions":  18,
+                                                                                 "messages":  64
+                                                                             }
+                                                                         ]
+                                                          },
+                                             "curl":  "curl http://127.0.0.1:{port}/api/stats"
+                                         },
+                                         {
+                                             "id":  "memcore.graph",
+                                             "name":  "知识图谱（输出）",
+                                             "method":  "GET",
+                                             "path":  "/api/graph",
+                                             "desc":  "项目—主题—会话的三层结构，供图谱页渲染。",
+                                             "request":  null,
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "nodes":  [
+                                                                            {
+                                                                                "id":  "AIWorkKit",
+                                                                                "type":  "project",
+                                                                                "weight":  12
+                                                                            }
+                                                                        ],
+                                                              "links":  [
+
+                                                                        ]
+                                                          },
+                                             "curl":  "curl http://127.0.0.1:{port}/api/graph"
+                                         },
+                                         {
+                                             "id":  "memcore.memory",
+                                             "name":  "记忆条目（输出）",
+                                             "method":  "GET",
+                                             "path":  "/api/memory",
+                                             "desc":  "按项目/主题归并的记忆条目；可带 query 过滤。",
+                                             "request":  null,
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "items":  [
+                                                                            {
+                                                                                "project":  "AIWorkKit",
+                                                                                "topic":  "打包",
+                                                                                "text":  "打包前先停服务"
+                                                                            }
+                                                                        ]
+                                                          },
+                                             "curl":  "curl \"http://127.0.0.1:{port}/api/memory?q=%E6%89%93%E5%8C%85\""
+                                         },
+                                         {
+                                             "id":  "memcore.search",
+                                             "name":  "检索（输出）",
+                                             "method":  "GET",
+                                             "path":  "/api/search",
+                                             "desc":  "全库检索：会话消息与人工条目一起命中。",
+                                             "request":  null,
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "hits":  [
+                                                                           {
+                                                                               "source":  "note",
+                                                                               "text":  "打包脚本清空索引"
+                                                                           }
+                                                                       ]
+                                                          },
+                                             "curl":  "curl \"http://127.0.0.1:{port}/api/search?q=%E9%94%81\""
+                                         },
+                                         {
+                                             "id":  "memcore.sync",
+                                             "name":  "同步会话（写入）",
+                                             "method":  "POST",
+                                             "path":  "/api/sync",
+                                             "desc":  "扫描各平台会话目录，抽取待归档内容。",
+                                             "request":  {
+                                                             "platform":  "aiworkkit",
+                                                             "since":  "2026-11-01"
+                                                         },
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "scanned":  72,
+                                                              "added":  6
+                                                          },
+                                             "curl":  "curl -X POST http://127.0.0.1:{port}/api/sync -H \"content-type: application/json\" -d \"{\\\"platform\\\":\\\"aiworkkit\\\"}\""
+                                         },
+                                         {
+                                             "id":  "memcore.build",
+                                             "name":  "生成规则（写入）",
+                                             "method":  "POST",
+                                             "path":  "/api/build",
+                                             "desc":  "把记忆浓缩成 memcore.mdc（每会话注入的规则文件）。",
+                                             "request":  {
+                                                             "target":  "aiworkkit"
+                                                         },
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "file":  "rules/memcore.mdc",
+                                                              "bytes":  4210
+                                                          },
+                                             "curl":  "curl -X POST http://127.0.0.1:{port}/api/build -H \"content-type: application/json\" -d \"{}\""
+                                         },
+                                         {
+                                             "id":  "memcore.note",
+                                             "name":  "录入条目（写入）",
+                                             "method":  "POST",
+                                             "path":  "/api/note",
+                                             "desc":  "人工录入一条决策/约束/收尾摘要。DELETE 同一路径按 id 删除。",
+                                             "request":  {
+                                                             "project":  "AIWorkKit",
+                                                             "topic":  "打包",
+                                                             "text":  "打包只清 staging，不动源目录",
+                                                             "kind":  "constraint"
+                                                         },
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "note":  {
+                                                                           "id":  "n-1f2a",
+                                                                           "createdAt":  "2026-11-26T10:00:00.000Z"
+                                                                       }
+                                                          },
+                                             "curl":  "curl -X POST http://127.0.0.1:{port}/api/note -H \"content-type: application/json\" -d @note.json"
+                                         }
+                                     ]
                    }
                ]
 }
