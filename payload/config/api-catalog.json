@@ -475,6 +475,38 @@
                        "desc":  "记忆归档：自动抽取 + 人工条目录入，生成每会话注入的 memcore.mdc，图谱页看项目—主题—会话结构。",
                        "endpoints":  [
                                          {
+                                             "id":  "memcore.sources",
+                                             "name":  "数据源健康（输出）",
+                                             "method":  "GET",
+                                             "path":  "/api/sources",
+                                             "desc":  "每个数据源读到多少条、耗时、是否失败。排查「为什么记忆没内容」先看这里。",
+                                             "request":  null,
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "tookMs":  181,
+                                                              "total":  817,
+                                                              "sources":  [
+                                                                              {
+                                                                                  "id":  "codebuddy.rules",
+                                                                                  "label":  "CodeBuddy · 规则",
+                                                                                  "kind":  "platform",
+                                                                                  "ok":  true,
+                                                                                  "ms":  3,
+                                                                                  "count":  300
+                                                                              },
+                                                                              {
+                                                                                  "id":  "chat.messages",
+                                                                                  "label":  "对话指令",
+                                                                                  "kind":  "chat",
+                                                                                  "ok":  true,
+                                                                                  "ms":  12,
+                                                                                  "count":  234
+                                                                              }
+                                                                          ]
+                                                          },
+                                             "curl":  "curl http://127.0.0.1:{port}/api/sources"
+                                         },
+                                         {
                                              "id":  "memcore.health",
                                              "name":  "健康检查（输出）",
                                              "method":  "GET",

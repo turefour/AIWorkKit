@@ -102,6 +102,7 @@
   <a href="#search" data-tab="search">检索</a>
   <a href="#graph" data-tab="graph">图谱</a>
   <a href="#rule" data-tab="rule">常驻规则</a>
+  <a href="#facts" data-tab="facts">分类记忆</a>
   <a href="#about" data-tab="about">数据源</a>
 </nav>
 
@@ -176,6 +177,10 @@
   </section>
 
   <section id="t-rule"><div class="card"><pre id="rule"></pre></div></section>
+
+  <section id="t-facts">
+    <div class="card" id="facts">加载中…</div>
+  </section>
 
   <section id="t-about">
     <div class="card"><pre id="about"></pre></div>
@@ -268,7 +273,77 @@ async function loadOverview() {
     '类型分布：' + Object.entries(o.stats.byType || {}).map(([k, v]) => k + '×' + v).join(' · '),
     '范围分布：' + Object.entries(o.stats.byScope || {}).map(([k, v]) => k + '×' + v).join(' · ')
   ].join('\n');
+  renderFacts(o.facts);
+  if (Array.isArray(o.sourceReport) && o.sourceReport.length) {
+    const rows = o.sourceReport
+      .filter((s) => s.count > 0)
+      .sort((a, b) => b.count - a.count)
+      .map((s) => '  ' + String(s.label).padEnd(20) + String(s.count).padStart(5) + ' 条  ' + s.ms + ' ms');
+    $('about').textContent += '\n\n采集明细（本次 sync）：\n' + rows.join('\n');
+  }
   await loadNotes();
+}
+
+/* 分类记忆：把「决策 / 约束 / 习惯 / 教训 / 偏好」分开列出，一眼看质量 */
+const FACT_LABEL = {
+  constraint: '约束',
+  habit: '习惯',
+  lesson: '教训',
+  decision: '决策',
+  preference: '偏好',
+  direction: '方向',
+  'task-end': '收尾',
+  pointer: '索引',
+  unknown: '未分类'
+};
+
+function renderFacts(facts) {
+  const box = $('facts');
+  if (!box) return;
+  if (!facts || !facts.total) {
+    box.innerHTML =
+      '<p>还没有分类结果。点右上角「同步」或「重建记忆」跑一次采集（会读取各平台的会话、规则、轨迹、日志）。</p>';
+    return;
+  }
+
+  const counts = facts.byType || {};
+  const chips = Object.keys(FACT_LABEL)
+    .filter((k) => counts[k])
+    .map(
+      (k) =>
+        '<span style="display:inline-block;margin:0 8px 8px 0;padding:3px 10px;border-radius:99px;' +
+        'background:rgba(53,230,196,.12);border:1px solid rgba(53,230,196,.35)">' +
+        FACT_LABEL[k] + ' <b>' + counts[k] + '</b></span>'
+    )
+    .join('');
+
+  const groups = {};
+  for (const f of facts.top || []) (groups[f.type] = groups[f.type] || []).push(f);
+
+  const sections = Object.keys(groups)
+    .map((type) => {
+      const rows = groups[type]
+        .slice(0, 8)
+        .map(
+          (f) =>
+            '<li style="margin:4px 0">' + esc(f.text) +
+            ' <span style="opacity:.55;font-size:12px">· ' + esc(f.source || '') +
+            ' · ' + f.score + ' 分</span></li>'
+        )
+        .join('');
+      return (
+        '<h3 style="margin:16px 0 6px;font-size:14px">' + (FACT_LABEL[type] || type) +
+        ' <span style="opacity:.5">(' + (counts[type] || 0) + ')</span></h3>' +
+        '<ul style="margin:0;padding-left:18px">' + rows + '</ul>'
+      );
+    })
+    .join('');
+
+  box.innerHTML =
+    '<div style="margin-bottom:12px">' + chips + '</div>' +
+    '<p style="opacity:.7;font-size:13px">共 ' + facts.total + ' 条，按判据打分；' +
+    '「约束/决策」需要强特征才会收录，宁缺勿滥。</p>' +
+    sections;
 }
 
 async function loadNotes() {

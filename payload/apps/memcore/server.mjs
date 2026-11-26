@@ -46,7 +46,8 @@ import {
   readRule,
   removeNote,
   searchAll,
-  sync
+  sync,
+  sources
 } from './lib/api.mjs';
 
 const HOST = process.env.MEMCORE_HOST || '127.0.0.1';
@@ -69,6 +70,10 @@ app.get('/api/health', (ctx) => {
   });
 });
 
+app.get('/api/sources', (ctx) => {
+  // 数据源健康：每个源读到多少条、耗时、失败原因
+  ctx.json(200, sources());
+});
 app.get('/api/stats', (ctx) => {
   ctx.json(200, { ok: true, ...statsOf(readStore()) });
 });

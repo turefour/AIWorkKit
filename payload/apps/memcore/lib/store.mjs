@@ -138,7 +138,7 @@ export function writeTextAtomic(file, text) {
 }
 
 export function emptyStore() {
-  return { version: STORE_VERSION, updatedAt: 0, sessions: {}, messages: [], notes: [] };
+  return { version: STORE_VERSION, updatedAt: 0, sessions: {}, messages: [], notes: [], facts: [], sourceReport: [] };
 }
 
 export function readStore() {
@@ -149,6 +149,9 @@ export function readStore() {
     if (!j.sessions || typeof j.sessions !== 'object') j.sessions = {};
     if (!Array.isArray(j.messages)) j.messages = [];
     if (!Array.isArray(j.notes)) j.notes = [];
+    // facts：多源采集 + 分类后的记忆条目（决策/约束/习惯/教训/偏好）
+    if (!Array.isArray(j.facts)) j.facts = [];
+    if (!Array.isArray(j.sourceReport)) j.sourceReport = [];
     if (j.version !== STORE_VERSION) j.version = STORE_VERSION;
     return j;
   } catch {

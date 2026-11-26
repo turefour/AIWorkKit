@@ -38,6 +38,8 @@ import {
 } from './extract.mjs';
 import { renderMemory, renderRule, estimate, fmtDate, fmtShort } from './render.mjs';
 import { loadMessages, loadProjects, loadSessions, sourceStatus, labelForCwd } from './sources.mjs';
+import { collect, sourceReport } from './collect.mjs';
+import { classifyItems } from './classify.mjs';
 
 export const CLI_PATH = path.join(KIT_ROOT, 'tools', 'memcore.mjs');
 export const CLI_HINT = 'node "' + CLI_PATH + '"';
@@ -69,17 +71,55 @@ export function sync() {
     added += 1;
   }
 
+  /*
+   * 多源采集 + 归类。
+   *
+   * 除了对话正文，还有项目状态、规则、轨迹、技能、日志、本地状态、CLI —— 这些
+   * 才是「更多可用信息」。每个源独立容错，采集结果统一交给 classifyItems 归类，
+   * 只有达到阈值（constraint/decision 强特征）才成为记忆条目。
+   */
+  let collected = { sources: [], items: [] };
+  let factsAdded = 0;
+  try {
+    collected = collect();
+    const incoming = classifyItems(collected.items);
+
+    /*
+     * facts 是**派生数据**：每次 sync 全量重建，而不是增量追加。
+     *
+     * 增量会让判据调整前的旧条目一直留着（第一版留下的表格行噪声就是这样）。
+     * 采集本身只要 200 ms 左右，重算比维护差量更可靠。
+     * 人工录入的 notes 不受影响 —— 那是用户输入的原始事实，不做推导。
+     */
+    const sorted = incoming.slice().sort((a, b) => b.score - a.score || b.at - a.at);
+    store.facts = sorted.slice(0, cfg.maxNotes || 2000);
+    factsAdded = store.facts.length;
+    store.sourceReport = collected.sources;
+  } catch (err) {
+    logLine('warn', 'sync.collect', String((err && err.message) || err));
+  }
+
   pruneStore(store);
   writeStore(store);
 
-  const after = { sessions: Object.keys(store.sessions).length, messages: store.messages.length };
+  const after = {
+    sessions: Object.keys(store.sessions).length,
+    messages: store.messages.length,
+    facts: (store.facts || []).length
+  };
   logLine(
     'info',
     'sync',
-    'messages+' + added + '  sessions+' + sessionsTouched +
-      '  total=' + after.sessions + '/' + after.messages
+    'messages+' + added + '  sessions+' + sessionsTouched + '  facts+' + factsAdded +
+      '  sources=' + collected.sources.length + '/' + collected.items.length +
+      '  total=' + after.sessions + '/' + after.messages + '/' + after.facts
   );
-  return { ok: true, added, sessionsTouched, before, after };
+  return { ok: true, added, sessionsTouched, factsAdded, before, after, sources: collected.sources };
+}
+
+/** 数据源健康快照：页面「数据源」区块与排查用 */
+export function sources() {
+  return sourceReport();
 }
 
 /* ---------------------------------------------------------------- 构建 */
@@ -160,12 +200,33 @@ export function readRule() {
 
 export function overview() {
   const store = readStore();
+  const facts = store.facts || [];
+
+  // 按类型汇总：页面上要能一眼看出「约束有几条、教训有几条」
+  const byType = {};
+  for (const f of facts) byType[f.type] = (byType[f.type] || 0) + 1;
+
+  // 按来源汇总：哪个数据源真正贡献了有效条目
+  const bySource = {};
+  for (const f of facts) bySource[f.source] = (bySource[f.source] || 0) + 1;
+
   return {
     ok: true,
     home: MEMORY_HOME,
     updatedAt: store.updatedAt,
     stats: statsOf(store),
     sources: sourceStatus(),
+    // 多源采集的健康与贡献（sync 时写入，未同步过则为空）
+    sourceReport: store.sourceReport || [],
+    facts: {
+      total: facts.length,
+      byType,
+      bySource,
+      top: facts
+        .slice()
+        .sort((a, b) => b.score - a.score || b.at - a.at)
+        .slice(0, 20)
+    },
     memory: readMemory(),
     rule: readRule()
   };
