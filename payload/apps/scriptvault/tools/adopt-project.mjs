@@ -30,7 +30,7 @@ const VAULT_ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
 /*
  * CodeVault 与 ScriptVault 是同级应用（apps/codevault、apps/scriptvault）。
- * 这里原来写死成开发机的 C:\Users\GH\Desktop\CodeVault —— 结果在别处部署时，
+ * 这里原来写死成某个开发机的绝对路径 —— 结果在别处部署时，
  * 登记「成功」但条目写进了开发目录，本套件的索引一直是空的，页面看起来像坏了。
  * 用相对位置解析，装到哪台机器都指向自己的 CodeVault。
  */

@@ -1,4 +1,19 @@
-﻿# 更新日志
+## 2.2.1
+
+集成与校验
+
+- 五个服务统一接线：launch / stop / deploy.json / 模板 / 接口目录完全对齐
+- 接口目录补全到 50 条（新增 tuner 分组；eco / errvault / memcore / codevault 补齐未收录路由）
+- memcore 记忆库重建：多源采集（9 个有效源）+ 决策/约束/习惯/教训归类
+- CodeVault 空索引不再抛错，改为引导页；静态资源加版本号
+- 修复打包脚本清空源目录数据、adopt-project 写死绝对路径两个问题
+- 本机运行态（索引/仓库清单/报错库/.eco）不再入库
+
+校验
+
+- JS/MJS 语法 0 失败、PS1 语法与 BOM 0 失败、JSON 0 失败
+- 五个服务 health 200；9 个关键接口实测通过
+# 更新日志
 
 本文件记录**对外可见**的版本变化。版本号的唯一来源是 `payload/VERSION`，
 两者必须同步 —— 用 `build/bump-version.ps1` 一次改好，不要手改其中一处。

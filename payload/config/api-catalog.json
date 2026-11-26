@@ -290,6 +290,154 @@
                                                               "skippedTotal":  1
                                                           },
                                              "curl":  "curl -X POST http://127.0.0.1:{port}/api/procs/kill-group -H \"content-type: application/json\" -d \"{\\\"owner\\\":\\\"AI 编辑器\\\",\\\"confirm\\\":true}\""
+                                         },
+                                         {
+                                             "id":  "eco.jobs",
+                                             "name":  "任务列表（输出）",
+                                             "method":  "GET",
+                                             "path":  "/api/jobs",
+                                             "desc":  "当前所有任务及其进度。",
+                                             "request":  null,
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "jobs":  [
+                                                                           {
+                                                                               "id":  "build",
+                                                                               "status":  "running",
+                                                                               "label":  "构建",
+                                                                               "current":  3,
+                                                                               "total":  10
+                                                                           }
+                                                                       ]
+                                                          },
+                                             "curl":  "curl -X GET http://127.0.0.1:{port}/api/jobs"
+                                         },
+                                         {
+                                             "id":  "eco.progress",
+                                             "name":  "上报进度（写入）",
+                                             "method":  "POST",
+                                             "path":  "/api/progress",
+                                             "desc":  "任务进度上报；/api/report 为别名。",
+                                             "request":  {
+                                                             "id":  "build",
+                                                             "current":  4,
+                                                             "total":  10,
+                                                             "label":  "构建"
+                                                         },
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "job":  {
+                                                                          "id":  "build",
+                                                                          "current":  4
+                                                                      }
+                                                          },
+                                             "curl":  "curl -X POST http://127.0.0.1:{port}/api/progress"
+                                         },
+                                         {
+                                             "id":  "eco.clear",
+                                             "name":  "清理已完成（写入）",
+                                             "method":  "POST",
+                                             "path":  "/api/clear",
+                                             "desc":  "清掉已结束的任务，返回清理数量。",
+                                             "request":  {
+
+                                                         },
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "removed":  3
+                                                          },
+                                             "curl":  "curl -X POST http://127.0.0.1:{port}/api/clear"
+                                         },
+                                         {
+                                             "id":  "eco.guard",
+                                             "name":  "进程守护状态（输出）",
+                                             "method":  "GET",
+                                             "path":  "/api/guard",
+                                             "desc":  "重复测试进程守护：分组计数与处置建议。",
+                                             "request":  null,
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "groups":  [
+                                                                             {
+                                                                                 "key":  "pytest",
+                                                                                 "count":  5,
+                                                                                 "verdict":  "warn"
+                                                                             }
+                                                                         ]
+                                                          },
+                                             "curl":  "curl -X GET http://127.0.0.1:{port}/api/guard"
+                                         },
+                                         {
+                                             "id":  "eco.guard.action",
+                                             "name":  "守护处置（写入）",
+                                             "method":  "POST",
+                                             "path":  "/api/guard/action",
+                                             "desc":  "对某个分组执行跳过/重试/终止。",
+                                             "request":  {
+                                                             "key":  "pytest",
+                                                             "action":  "kill"
+                                                         },
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "killed":  3
+                                                          },
+                                             "curl":  "curl -X POST http://127.0.0.1:{port}/api/guard/action"
+                                         },
+                                         {
+                                             "id":  "eco.logs.live",
+                                             "name":  "实时事件（输出）",
+                                             "method":  "GET",
+                                             "path":  "/api/logs/live",
+                                             "desc":  "最近的运行事件（含客户端上报的错误）。",
+                                             "request":  null,
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "items":  [
+                                                                            {
+                                                                                "seq":  12,
+                                                                                "level":  "warn",
+                                                                                "scope":  "client",
+                                                                                "msg":  "x is null"
+                                                                            }
+                                                                        ]
+                                                          },
+                                             "curl":  "curl -X GET http://127.0.0.1:{port}/api/logs/live"
+                                         },
+                                         {
+                                             "id":  "eco.clientError",
+                                             "name":  "前端报错上报（写入）",
+                                             "method":  "POST",
+                                             "path":  "/api/client-error",
+                                             "desc":  "页面 JS 异常回传，便于排查前端问题。",
+                                             "request":  {
+                                                             "msg":  "x is null",
+                                                             "stack":  "at boot",
+                                                             "url":  "http://127.0.0.1:57910/"
+                                                         },
+                                             "response":  {
+                                                              "ok":  true
+                                                          },
+                                             "curl":  "curl -X POST http://127.0.0.1:{port}/api/client-error"
+                                         },
+                                         {
+                                             "id":  "eco.report",
+                                             "name":  "上报进度（别名）",
+                                             "method":  "POST",
+                                             "path":  "/api/report",
+                                             "desc":  "/api/progress 的别名，行为完全一致；老集成用这个名字。",
+                                             "request":  {
+                                                             "id":  "build",
+                                                             "current":  7,
+                                                             "total":  10
+                                                         },
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "job":  {
+                                                                          "id":  "build",
+                                                                          "current":  7
+                                                                      }
+                                                          },
+                                             "curl":  "curl -X POST http://127.0.0.1:{port}/api/report"
                                          }
                                      ]
                    },
@@ -422,6 +570,34 @@
                                                                         ]
                                                           },
                                              "curl":  "curl \"http://127.0.0.1:{port}/api/logs?tail=50\""
+                                         },
+                                         {
+                                             "id":  "errvault.snippet",
+                                             "name":  "代码片段（输出）",
+                                             "method":  "GET",
+                                             "path":  "/api/snippet",
+                                             "desc":  "按 id 取某条记录关联的代码片段。",
+                                             "request":  null,
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "snippet":  "app.post(...)"
+                                                          },
+                                             "curl":  "curl -X GET http://127.0.0.1:{port}/api/snippet"
+                                         },
+                                         {
+                                             "id":  "errvault.hit",
+                                             "name":  "命中计数（写入）",
+                                             "method":  "POST",
+                                             "path":  "/api/hit",
+                                             "desc":  "记录某条解法被再次命中，用于排序。",
+                                             "request":  {
+                                                             "id":  "e-1a2b"
+                                                         },
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "hits":  4
+                                                          },
+                                             "curl":  "curl -X POST http://127.0.0.1:{port}/api/hit"
                                          }
                                      ]
                    },
@@ -465,6 +641,101 @@
                                                               "url":  "http://127.0.0.1:{port}/"
                                                           },
                                              "curl":  "curl -X POST http://127.0.0.1:{port}/api/launch -H \"content-type: application/json\" -d \"{\\\"app\\\":\\\"eco\\\"}\""
+                                         },
+                                         {
+                                             "id":  "codevault.services",
+                                             "name":  "服务清单（输出）",
+                                             "method":  "GET",
+                                             "path":  "/api/services",
+                                             "desc":  "各内嵌面板的在线状态与地址。",
+                                             "request":  null,
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "apps":  {
+                                                                           "eco":  {
+                                                                                       "ok":  true,
+                                                                                       "url":  "http://127.0.0.1:57821/"
+                                                                                   }
+                                                                       }
+                                                          },
+                                             "curl":  "curl -X GET http://127.0.0.1:{port}/api/services"
+                                         },
+                                         {
+                                             "id":  "codevault.catalog",
+                                             "name":  "接口目录（输出）",
+                                             "method":  "GET",
+                                             "path":  "/api/catalog",
+                                             "desc":  "全部模块的接口清单（设置页数据源）。",
+                                             "request":  null,
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "groups":  [
+
+                                                                         ]
+                                                          },
+                                             "curl":  "curl -X GET http://127.0.0.1:{port}/api/catalog"
+                                         },
+                                         {
+                                             "id":  "codevault.config",
+                                             "name":  "降耗配置（读写）",
+                                             "method":  "GET",
+                                             "path":  "/api/config",
+                                             "desc":  "代理到 Eco 的降耗配置；POST 同路径写入。",
+                                             "request":  null,
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "config":  {
+                                                                             "scanIntervalMs":  6000
+                                                                         }
+                                                          },
+                                             "curl":  "curl -X GET http://127.0.0.1:{port}/api/config"
+                                         },
+                                         {
+                                             "id":  "codevault.projects",
+                                             "name":  "项目索引（输出）",
+                                             "method":  "GET",
+                                             "path":  "/api/projects",
+                                             "desc":  "CodeVault 的 projects.json 原样返回。",
+                                             "request":  null,
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "data":  {
+                                                                           "projects":  [
+
+                                                                                        ]
+                                                                       }
+                                                          },
+                                             "curl":  "curl -X GET http://127.0.0.1:{port}/api/projects"
+                                         },
+                                         {
+                                             "id":  "codevault.repos",
+                                             "name":  "仓库清单（输出）",
+                                             "method":  "GET",
+                                             "path":  "/api/repos",
+                                             "desc":  "已登记仓库及其 git 状态。",
+                                             "request":  null,
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "repos":  [
+
+                                                                        ]
+                                                          },
+                                             "curl":  "curl -X GET http://127.0.0.1:{port}/api/repos"
+                                         },
+                                         {
+                                             "id":  "codevault.scripts",
+                                             "name":  "脚本库（输出）",
+                                             "method":  "GET",
+                                             "path":  "/api/scripts",
+                                             "desc":  "可复用脚本库索引。",
+                                             "request":  null,
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "items":  [
+
+                                                                        ]
+                                                          },
+                                             "curl":  "curl -X GET http://127.0.0.1:{port}/api/scripts"
                                          }
                                      ]
                    },
@@ -655,6 +926,155 @@
                                                                        }
                                                           },
                                              "curl":  "curl -X POST http://127.0.0.1:{port}/api/note -H \"content-type: application/json\" -d @note.json"
+                                         },
+                                         {
+                                             "id":  "memcore.overview",
+                                             "name":  "概览（输出）",
+                                             "method":  "GET",
+                                             "path":  "/api/overview",
+                                             "desc":  "统计、分类记忆、数据源健康状况。",
+                                             "request":  null,
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "stats":  {
+                                                                            "sessions":  74
+                                                                        },
+                                                              "facts":  {
+                                                                            "total":  49,
+                                                                            "byType":  {
+                                                                                           "constraint":  25
+                                                                                       }
+                                                                        }
+                                                          },
+                                             "curl":  "curl -X GET http://127.0.0.1:{port}/api/overview"
+                                         },
+                                         {
+                                             "id":  "memcore.rule",
+                                             "name":  "常驻规则（输出）",
+                                             "method":  "GET",
+                                             "path":  "/api/rule",
+                                             "desc":  "当前生成的 memcore.mdc 内容。",
+                                             "request":  null,
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "text":  "# 记忆规则…"
+                                                          },
+                                             "curl":  "curl -X GET http://127.0.0.1:{port}/api/rule"
+                                         },
+                                         {
+                                             "id":  "memcore.logs",
+                                             "name":  "运行日志（输出）",
+                                             "method":  "GET",
+                                             "path":  "/api/logs",
+                                             "desc":  "同步与构建的最近日志行。",
+                                             "request":  null,
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "lines":  [
+                                                                            "sync messages+15"
+                                                                        ]
+                                                          },
+                                             "curl":  "curl -X GET http://127.0.0.1:{port}/api/logs"
+                                         },
+                                         {
+                                             "id":  "memcore.prune",
+                                             "name":  "清理过期（写入）",
+                                             "method":  "POST",
+                                             "path":  "/api/prune",
+                                             "desc":  "按保留策略清理过期会话与消息。",
+                                             "request":  {
+
+                                                         },
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "removed":  0
+                                                          },
+                                             "curl":  "curl -X POST http://127.0.0.1:{port}/api/prune"
+                                         },
+                                         {
+                                             "id":  "memcore.installRule",
+                                             "name":  "安装规则（写入）",
+                                             "method":  "POST",
+                                             "path":  "/api/install-rule",
+                                             "desc":  "把 memcore.mdc 写入指定平台的规则目录。",
+                                             "request":  {
+                                                             "target":  "codebuddy"
+                                                         },
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "path":  "~/.codebuddy/rules/memcore.mdc"
+                                                          },
+                                             "curl":  "curl -X POST http://127.0.0.1:{port}/api/install-rule"
+                                         },
+                                         {
+                                             "id":  "memcore.clientError",
+                                             "name":  "前端报错上报（写入）",
+                                             "method":  "POST",
+                                             "path":  "/api/client-error",
+                                             "desc":  "页面异常回传。",
+                                             "request":  {
+                                                             "msg":  "x is null"
+                                                         },
+                                             "response":  {
+                                                              "ok":  true
+                                                          },
+                                             "curl":  "curl -X POST http://127.0.0.1:{port}/api/client-error"
+                                         }
+                                     ]
+                   },
+                   {
+                       "id":  "tuner",
+                       "title":  "降温面板 · Tuner",
+                       "port":  "tuner",
+                       "desc":  "进程内存回收、优先级调整、挂起/恢复；面向 IDE 与后台子进程。",
+                       "endpoints":  [
+                                         {
+                                             "id":  "tuner.status",
+                                             "name":  "面板状态（输出）",
+                                             "method":  "GET",
+                                             "path":  "/api/status",
+                                             "desc":  "当前受管进程的内存与优先级快照。",
+                                             "request":  null,
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "processes":  [
+                                                                                {
+                                                                                    "pid":  10136,
+                                                                                    "name":  "CodeBuddy CN",
+                                                                                    "memMB":  730
+                                                                                }
+                                                                            ]
+                                                          },
+                                             "curl":  "curl -X GET http://127.0.0.1:{port}/api/status"
+                                         },
+                                         {
+                                             "id":  "tuner.action",
+                                             "name":  "执行降温（写入）",
+                                             "method":  "POST",
+                                             "path":  "/api/action",
+                                             "desc":  "对指定进程执行回收/降优先级/挂起/恢复。",
+                                             "request":  {
+                                                             "action":  "trim",
+                                                             "pid":  10136
+                                                         },
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "freedMB":  128
+                                                          },
+                                             "curl":  "curl -X POST http://127.0.0.1:{port}/api/action"
+                                         },
+                                         {
+                                             "id":  "tuner.health",
+                                             "name":  "健康检查（输出）",
+                                             "method":  "GET",
+                                             "path":  "/api/health",
+                                             "desc":  "服务状态。",
+                                             "request":  null,
+                                             "response":  {
+                                                              "ok":  true,
+                                                              "version":  "2.2.1"
+                                                          },
+                                             "curl":  "curl -X GET http://127.0.0.1:{port}/api/health"
                                          }
                                      ]
                    }

@@ -155,18 +155,18 @@ test('a known path with the wrong method returns 405, unknown paths 404', async 
 
 test('guardWrite accepts a matching host origin and rejects a sibling port', () => {
   const json = 'application/json';
-  assert.equal(guardWrite({ method: 'POST', headers: { 'content-type': json } }, { allowHost: '127.0.0.1:47900' }), '');
+  assert.equal(guardWrite({ method: 'POST', headers: { 'content-type': json } }, { allowHost: '127.0.0.1:57900' }), '');
   assert.equal(
     guardWrite(
-      { method: 'POST', headers: { 'content-type': json, origin: 'http://127.0.0.1:47900' } },
-      { allowHost: '127.0.0.1:47900' }
+      { method: 'POST', headers: { 'content-type': json, origin: 'http://127.0.0.1:57900' } },
+      { allowHost: '127.0.0.1:57900' }
     ),
     ''
   );
   assert.match(
     guardWrite(
       { method: 'POST', headers: { 'content-type': json, origin: 'http://127.0.0.1:5000' } },
-      { allowHost: '127.0.0.1:47900' }
+      { allowHost: '127.0.0.1:57900' }
     ),
     /cross-origin/
   );
